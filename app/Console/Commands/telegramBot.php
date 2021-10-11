@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Coupon;
+use App\Models\Source;
 use Illuminate\Console\Command;
 use Telegram\Bot\Keyboard\Keyboard;
+use Illuminate\Support\Facades\Cache;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class telegramBot extends Command
@@ -40,19 +43,23 @@ class telegramBot extends Command
      */
     public function handle()
     {
+        $this->shops = Source::where('type', 'shop')->get()->pluck('title')->toArray();
+        $this->categories = Source::where('type', 'categories')->get()->pluck('title')->toArray();
         //Telegram::addCommand(\Telegram\Bot\Commands\HelpCommand::class);
         //$comands = Telegram::getCommands();
         //dd($comands);
 
-        $this->lastId = 198098369;
+        $this->lastId = Cache::get('telegram_update_id');
         while (true) {
             sleep(1);
             $msgs = Telegram::getUpdates();
-            dump($msgs);
+            //dump($msgs);
             foreach ($msgs as $msg) {
 
                 //dump($msg->update_id);
                 if ($msg->update_id > $this->lastId) {
+                    Cache::set('telegram_update_id', $this->lastId);
+                    dump($msg);
                     $this->respond($msg);
                     $this->lastId = $msg->update_id;
                 }
@@ -67,9 +74,9 @@ class telegramBot extends Command
 
         //@test04_2021Bot
         $chatid = $msg['message']['chat']['id'];
-        $text = $msg['message']['text'];
+        $msgText = $msg['message']['text'];
 
-        switch ($text) {
+        switch ($msgText) {
             case '/start':
                 $txt = 'Как ищем?';
                 $this->mainMenu($chatid, $txt);
@@ -80,17 +87,71 @@ class telegramBot extends Command
 
                 break;
             case 'МАГАЗИНЫ':
-                $txt = 'МАГАЗИНЫ МАГАЗИНЫ';
-                $this->sendMsg($chatid, $txt);
+                $txt = 'Выберите магазин';
+                $this->shopsMenu($chatid, $txt);
                 break;
             case '/contact';
 
                 break;
             default:
-                $txt = 'нужные товары с большими скидками. Покупайте с экономией! Нажимайте /start';
-                $this->sendMsg($chatid, $txt);
+                $this->shopPage($chatid, $msgText);
+                // $txt = 'нужные товары с большими скидками. Покупайте с экономией! Нажимайте /start';
+                //$this->sendMsg($chatid, $txt);
         }
     }
+
+    public function shopPage($chatid,  $msgText)
+    {
+
+        if (!in_array($msgText, $this->shops)) {
+            return;
+        }
+        $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
+        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->get();
+
+        $html = '';
+        foreach ($coupons as $couponObj) {
+            $coupon = json_decode($couponObj->data);
+            dump($coupon);
+            $html .= "<b>{$coupon->name}</b>";
+            $html .= "<pre>Магазин: {$coupon->shop_name}</pre>";
+            $html .= "<pre>Срок действия: {$coupon->date_start} - {$coupon->date_end}</pre>";
+            $html .= "<pre>Промокод: {$coupon->promocode}</pre>";
+            $html .= "<a href='{$coupon->gotolink}'>ПОЛУЧИТЬ КУПОН со ссылкой</a>";
+
+
+            $html .= "<pre> </pre>";
+        }
+
+
+        // $html = "<b>bold</b>, <strong>bold</strong>
+        // <i>italic</i>, <em>italic</em>
+        // <a href=''>inline URL</a>
+        // <code>inline fixed-width code</code>
+        // <pre>pre-formatted fixed-width code block</pre>";
+        $this->sendHtml($chatid, $html);
+    }
+
+
+    public function shopsMenu($chatid, $txt)
+    {
+
+        $keyboard[] = $this->shops;
+        dump($keyboard);
+        //$keyboard = [];
+        $this->sendMenu($chatid, $keyboard, $txt);
+    }
+
+    public function sendHtml($chatid, $html)
+    {
+        $response = Telegram::sendMessage([
+            'chat_id' => $chatid,
+            'text' =>  $html,
+            'parse_mode' => 'HTML'
+        ]);
+        $messageId = $response->getMessageId();
+    }
+
 
 
     public function mainMenu($chatid, $txt)
