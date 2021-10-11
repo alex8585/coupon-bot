@@ -100,6 +100,9 @@ class telegramBot extends Command
         }
     }
 
+
+
+    
     public function shopPage($chatid,  $msgText)
     {
 
@@ -109,16 +112,18 @@ class telegramBot extends Command
         $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
         $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->get();
 
-        $html = '';
+        $html = "<pre style='text-align:center;'> Магазин: $msgText</pre>";
+        $html .= "<pre> </pre>";
         foreach ($coupons as $couponObj) {
             $coupon = json_decode($couponObj->data);
             dump($coupon);
+            $html .= "<a href='{$coupon->logo}'>1</a>";
             $html .= "<b>{$coupon->name}</b>";
-            $html .= "<pre>Магазин: {$coupon->shop_name}</pre>";
+            //$html .= "<pre>Магазин: {$coupon->shop_name}</pre>";
             $html .= "<pre>Срок действия: {$coupon->date_start} - {$coupon->date_end}</pre>";
             $html .= "<pre>Промокод: {$coupon->promocode}</pre>";
-            $html .= "<a href='{$coupon->gotolink}'>ПОЛУЧИТЬ КУПОН со ссылкой</a>";
-
+            $html .= "<a href='{$coupon->gotolink}'>ПОЛУЧИТЬ КУПОН</a>";
+            $html .= "<pre>{$coupon->description}</pre>";
 
             $html .= "<pre> </pre>";
         }
@@ -147,7 +152,8 @@ class telegramBot extends Command
         $response = Telegram::sendMessage([
             'chat_id' => $chatid,
             'text' =>  $html,
-            'parse_mode' => 'HTML'
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => false,
         ]);
         $messageId = $response->getMessageId();
     }
