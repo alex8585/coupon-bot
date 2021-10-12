@@ -194,7 +194,7 @@ class importCoupons extends Command
             foreach ($coupons as $coupon) {
                 Coupon::updateOrCreate(
                     ['source_id' => $source->id, 'outher_coupon_id' => $coupon['id']],
-                    ['type' => $source->type, 'logo_id' => $coupon['logo_id'], 'data' => json_encode($coupon)]
+                    ['type' => $source->type, 'logo_id' => $coupon['logo_id'], 'advcampaign_id' => $coupon['advcampaign_id'], 'data' => json_encode($coupon)]
                 );
                 $updatedIds[] = $coupon['id'];
             }
