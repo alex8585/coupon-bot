@@ -45,7 +45,7 @@ class telegramBot extends Command
     public function handle()
     {
         $this->shops = Source::where('type', 'shop')->get()->pluck('title')->toArray();
-        $this->categories = Source::where('type', 'categories')->get()->pluck('title')->toArray();
+        $this->categories = Source::where('type', 'category')->get()->pluck('title')->toArray();
         //Telegram::addCommand(\Telegram\Bot\Commands\HelpCommand::class);
         //$comands = Telegram::getCommands();
         //dd($comands);
@@ -77,13 +77,25 @@ class telegramBot extends Command
 
     public function callback_query($msg)
     {
-        dump($msg);
         $chatid = $msg['callback_query']['message']['chat']['id'];
         $data = $msg['callback_query']['data'];
-        dump($chatid);
         dump($data);
-        $txt = 'Товары для детей Товары для дома';
-        $this->sendMsg($chatid, $txt);
+        switch ($data) {
+            case 'categories':
+                $this->categoriesMenu($chatid);
+                break;
+            case 'shops':
+                $this->shopsMenu($chatid);
+                break;
+            default:
+                if ($this->shopPage($chatid, $data)) {
+                    break;
+                }
+                if ($this->categoryPage($chatid, $data)) {
+                    break;
+                }
+                $this->sendMsg($chatid, $data);
+        }
     }
 
 
@@ -94,106 +106,100 @@ class telegramBot extends Command
         $chatid = $msg['message']['chat']['id'];
         $msgText = $msg['message']['text'];
 
-
         switch ($msgText) {
             case '/start':
-                $txt = 'Как ищем?';
-                $this->mainMenu($chatid, $txt);
-                break;
-            case 'КАТЕГОРИИ':
-                $txt = 'Товары для детей Товары для дома';
-                $this->sendMsg($chatid, $txt);
-
-                break;
-            case 'МАГАЗИНЫ':
-                $txt = 'Выберите магазин';
-                $this->shopsMenu($chatid, $txt);
-                break;
-            case '/contact';
-
+                $this->mainMenu($chatid);
                 break;
             default:
-                $this->shopPage($chatid, $msgText);
-                // $txt = 'нужные товары с большими скидками. Покупайте с экономией! Нажимайте /start';
-                //$this->sendMsg($chatid, $txt);
         }
     }
 
 
 
-    public function sendPhoto($chatid, $file = '', $html = '')
+    public function sendPhoto($chatid, $file = '', $html = '', $keyboardArr = [])
     {
-        $inlineLayout = [
-            [
-                Keyboard::inlineButton(['text' => 'Test', 'callback_data' => 'data']),
-                Keyboard::inlineButton(['text' => 'Btn 2', 'callback_data' => 'data_from_btn2'])
-            ]
+        $keyboard = $this->makeKeybord($keyboardArr);
+
+        $params = [
+            'chat_id' => $chatid,
+            'photo'                => new InputFile($file),
+            'caption'              => $html,
+            'parse_mode' => 'HTML',
         ];
+        if ($keyboard) {
+            $params['reply_markup'] = $keyboard;
+        }
 
-        $keyboard = Keyboard::make([
-            'inline_keyboard' => $inlineLayout
-        ]);
-
-        $response = Telegram::sendPhoto(
-            [
-                'chat_id' => $chatid,
-                'photo'                => new InputFile($file),
-                'caption'              => $html,
-                'parse_mode' => 'HTML',
-                'reply_markup' => $keyboard,
-            ]
-        );
-        // dump($response);
+        $response = Telegram::sendPhoto($params);
     }
 
-
-    public function shopPage($chatid,  $msgText)
+    public function categoryPage($chatid,  $data)
     {
 
-        if (!in_array($msgText, $this->shops)) {
-            return;
+        if (!in_array($data, $this->categories)) {
+            return false;
         }
-        $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
-        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->get();
+        $category = Source::where('type', 'category')->where('title', $data)->first();
+        $coupons = Coupon::where('type', 'category')->where('source_id', $category->id)->with('logo')->get();
+
 
 
         $logo = $coupons->first()->logo->url;
-        //dump($coupons);
-        dump($logo);
-        //$html = "<pre style='text-align:center;'> Магазин: $msgText</pre>";
         $html = '';
         foreach ($coupons as $couponObj) {
-            //$html .= '<a href="' . 'https://176.119.147.16/storage/logo/1634037122_20551-48e32a7541e22f3b.jpg' . '"> </a>';
-            // $logo = $couponObj->logo->url;
+            dump($couponObj);
             $coupon = json_decode($couponObj->data);
             $html .= "<b>{$coupon->name}</b>";
-            //$html .= "<pre>Магазин: {$coupon->shop_name}</pre>";
             $html .= "<pre>Срок действия: {$coupon->date_start} - {$coupon->date_end}</pre>";
             $html .= "<pre>Промокод: {$coupon->promocode}</pre>";
             $html .= "<a href='{$coupon->gotolink}'>ПОЛУЧИТЬ КУПОН</a>";
             $html .= "<pre>{$coupon->description}</pre>";
-
             $html .= "<pre> </pre>";
         }
 
+        $keyboardArr = $this->mainMenuKeybord();
+        $this->sendPhoto($chatid, $logo, '', $keyboardArr);
+
+
+
+        return true;
+    }
+
+
+    public function shopPage($chatid,  $data)
+    {
+
+        if (!in_array($data, $this->shops)) {
+            return false;
+        }
+        $shop = Source::where('type', 'shop')->where('title', $data)->first();
+        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->get();
+
+        $logo = $coupons->first()->logo->url;
+        $html = '';
+        foreach ($coupons as $couponObj) {
+            $coupon = json_decode($couponObj->data);
+            $html .= "<b>{$coupon->name}</b>";
+            $html .= "<pre>Срок действия: {$coupon->date_start} - {$coupon->date_end}</pre>";
+            $html .= "<pre>Промокод: {$coupon->promocode}</pre>";
+            $html .= "<a href='{$coupon->gotolink}'>ПОЛУЧИТЬ КУПОН</a>";
+            $html .= "<pre>{$coupon->description}</pre>";
+            $html .= "<pre> </pre>";
+        }
 
         // $html = "<b>bold</b>, <strong>bold</strong>
         // <i>italic</i>, <em>italic</em>
         // <a href=''>inline URL</a>
         // <code>inline fixed-width code</code>
         // <pre>pre-formatted fixed-width code block</pre>";
-        $this->sendPhoto($chatid, $logo, $html);
+        $keyboardArr = $this->mainMenuKeybord();
+        $this->sendPhoto($chatid, $logo, $html, $keyboardArr);
+
+        return true;
     }
 
 
-    public function shopsMenu($chatid, $txt)
-    {
 
-        $keyboard[] = $this->shops;
-        dump($keyboard);
-        //$keyboard = [];
-        $this->sendMenu($chatid, $keyboard, $txt);
-    }
 
     public function sendHtml($chatid, $html)
     {
@@ -207,30 +213,82 @@ class telegramBot extends Command
     }
 
 
-
-    public function mainMenu($chatid, $txt)
+    public function mainMenuKeybord()
     {
-        $keyboard = [
-            ['КАТЕГОРИИ', 'МАГАЗИНЫ'],
+        return [
+            ['text' => 'КАТЕГОРИИ', 'callback_data' => 'categories'],
+            ['text' => 'МАГАЗИНЫ', 'callback_data' => 'shops']
         ];
-        $this->sendMenu($chatid, $keyboard, $txt);
+    }
+
+    public function mainMenu($chatid)
+    {
+        $txt = 'Как ищем?';
+
+        $keyboardArr = $this->mainMenuKeybord();
+        $this->sendMenu($chatid, $keyboardArr, $txt);
+    }
+    public function categoriesMenu($chatid)
+    {
+        $txt = 'Выберите категорию';
+
+        $keyboardArr = [];
+        foreach ($this->categories as $cat) {
+            $keyboardArr[] = [
+                'text' => $cat,
+                'callback_data' => $cat,
+            ];
+        }
+        $this->sendMenu($chatid, $keyboardArr, $txt);
+    }
+
+    public function shopsMenu($chatid)
+    {
+        $txt = 'Выберите магазин';
+
+        $keyboardArr = [];
+        foreach ($this->shops as $shop) {
+            $keyboardArr[] = [
+                'text' => $shop,
+                'callback_data' => $shop,
+            ];
+        }
+
+        $this->sendMenu($chatid, $keyboardArr, $txt);
     }
 
 
-
-    public function sendMenu($chatid, $keyboard, $txt = '')
+    public function makeKeybord($keyboardArr)
     {
+        if (!$keyboardArr) {
+            return [];
+        }
+        $keyboardArr = array_chunk($keyboardArr, 3);
 
-        $reply_markup = Keyboard::make([
-            'keyboard' => $keyboard,
-            'resize_keyboard' => true,
-            'one_time_keyboard' => true
+        $inlineLayout = [];
+        foreach ($keyboardArr as $row) {
+            $newRow = [];
+            foreach ($row as  $btn) {
+                $newRow[] = Keyboard::inlineButton(['text' => $btn['text'], 'callback_data' => $btn["callback_data"]]);
+            }
+            $inlineLayout[] = $newRow;
+        }
+
+        $keyboard = Keyboard::make([
+            'inline_keyboard' => $inlineLayout
         ]);
 
+        return  $keyboard;
+    }
+
+    public function sendMenu($chatid, $keyboardArr, $txt)
+    {
+
+        $keyboard = $this->makeKeybord($keyboardArr);
         $response = Telegram::sendMessage([
             'chat_id' => $chatid,
             'text' => $txt,
-            'reply_markup' => $reply_markup
+            'reply_markup' => $keyboard
         ]);
 
         $messageId = $response->getMessageId();
@@ -242,18 +300,6 @@ class telegramBot extends Command
         $response = Telegram::sendMessage([
             'chat_id' => $chatid,
             'text' => $txt
-        ]);
-    }
-
-    public function ____showMenu($chatid)
-    {
-        $message = '';
-        $message .=  '/website' . chr(10);
-        $message .= '/contact' . chr(10);
-
-        $response = Telegram::sendMessage([
-            'chat_id' => $chatid,
-            'text' => $message
         ]);
     }
 }
