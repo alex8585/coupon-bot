@@ -3,9 +3,13 @@
 namespace App\Console\Commands;
 
 use Goutte\Client;
+use App\Models\Logo;
 use App\Models\Coupon;
 use App\Models\Source;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManagerStatic as Image;
 
 class importCoupons extends Command
 {
@@ -32,6 +36,7 @@ class importCoupons extends Command
     public function __construct()
     {
         parent::__construct();
+        Image::configure(array('driver' => 'imagick'));
     }
 
 
@@ -54,14 +59,54 @@ class importCoupons extends Command
 
 
         foreach ($shops  as $shop) {
+
+            $client = new Client();
+            $crawler = $client->request('GET', $shop['url']);
+
+            $old_logo  = $crawler->filter('logo')->first()->text();
+
+
+            $logo_id = $this->convertImg($old_logo);
+
             Source::updateOrCreate(
                 ['title' => $shop['name'], 'type' => 'shop'],
-                ['url' => $shop['url'], 'logo' => $shop['logo']]
+                ['url' => $shop['url'], 'logo_id' => $logo_id]
             );
             $updatedIds[] = $shop['name'];
         }
         Source::where('type', 'shop')->whereNotIn('title', $updatedIds)->delete();
     }
+
+
+    public function convertImg($oldUrl)
+    {
+
+        $logo = Logo::where('old_url', $oldUrl)->first();
+        if ($logo) {
+            return $logo->id;
+        }
+        $pathParts = pathinfo($oldUrl);
+        $fileName = time() . "_" . $pathParts['filename'] . '.jpg';
+
+        $img = Image::make($oldUrl);
+
+        $path = storage_path('app/public/logo/') . $fileName;
+
+        //http://local-coupon-bot.com/storage/logo/bar.jpg
+
+        $img->save($path);
+
+        $newUrl = "/storage/logo/{$fileName}";
+
+
+        $logo = new Logo;
+        $logo->old_url = $oldUrl;
+        $logo->new_url = $newUrl;
+        $logo->save();
+
+        return $logo->id;
+    }
+
 
     /**
      * Execute the console command.
@@ -70,6 +115,7 @@ class importCoupons extends Command
      */
     public function handle()
     {
+
         // <name>Скидка 1000р при заказе от 5000р</name>
         // <advcampaign_id>22298</advcampaign_id>
         // <rating>1.39</rating>
@@ -124,6 +170,9 @@ class importCoupons extends Command
             $coupons = [];
             $crawler->filter('coupon')->each(function ($node) use (&$coupons, $shops) {
                 $advcampaign_id = $node->filter('advcampaign_id')->text();
+                $old_logo  = $node->filter('logo')->text();
+
+                $logo_id = $this->convertImg($old_logo);
                 $coupons[] = [
                     'shop_name' => $shops[$advcampaign_id]['name'],
                     'shop_site' => $shops[$advcampaign_id]['site'],
@@ -135,21 +184,22 @@ class importCoupons extends Command
                     'gotolink' => $node->filter('gotolink')->text(''),
                     'advcampaign_id' => $advcampaign_id,
                     'rating' => $node->filter('rating')->text(),
-                    'logo' => $node->filter('logo')->text(),
                     'description' => $node->filter('description')->text(''),
+                    'logo_id' => $logo_id,
+                    'old_logo' => $old_logo,
                 ];
             });
 
             $updatedIds = [];
             foreach ($coupons as $coupon) {
                 Coupon::updateOrCreate(
-                    ['source_id' => $source->id, 'coupon_id' => $coupon['id']],
-                    ['type' => $source->type, 'data' => json_encode($coupon)]
+                    ['source_id' => $source->id, 'outher_coupon_id' => $coupon['id']],
+                    ['type' => $source->type, 'logo_id' => $coupon['logo_id'], 'data' => json_encode($coupon)]
                 );
                 $updatedIds[] = $coupon['id'];
             }
 
-            Coupon::where('source_id', $source->id)->whereNotIn('coupon_id', $updatedIds)->delete();
+            Coupon::where('source_id', $source->id)->whereNotIn('outher_coupon_id', $updatedIds)->delete();
         }
 
 

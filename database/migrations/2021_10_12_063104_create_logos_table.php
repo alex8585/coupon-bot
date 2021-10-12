@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCouponsTable extends Migration
+class CreateLogosTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,10 @@ class CreateCouponsTable extends Migration
      */
     public function up()
     {
-        Schema::create('coupons', function (Blueprint $table) {
+        Schema::create('logos', function (Blueprint $table) {
             $table->id();
-            $table->integer('source_id')->index();
-            $table->string('type');
-            $table->integer('logo_id')->nullable();
-            $table->integer('outher_coupon_id')->nullable();
-            $table->json('data')->nullable();
+            $table->string('old_url');
+            $table->string('new_url');
             $table->timestamps();
         });
     }
@@ -31,6 +28,6 @@ class CreateCouponsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('coupons');
+        Schema::dropIfExists('logos');
     }
 }

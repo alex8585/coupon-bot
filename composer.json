@@ -9,6 +9,7 @@
         "fabpot/goutte": "^4.0",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
+        "intervention/image": "^2.7",
         "irazasyed/telegram-bot-sdk": "^3.4",
         "laravel/framework": "^8.54",
         "laravel/sanctum": "^2.11",

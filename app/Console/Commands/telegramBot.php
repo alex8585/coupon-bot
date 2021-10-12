@@ -94,15 +94,66 @@ class telegramBot extends Command
 
                 break;
             default:
-                $this->shopPage($chatid, $msgText);
+                $this->shopPage2($chatid, $msgText);
                 // $txt = 'нужные товары с большими скидками. Покупайте с экономией! Нажимайте /start';
                 //$this->sendMsg($chatid, $txt);
         }
     }
 
 
+    public function shopPage2($chatid,  $msgText)
+    {
 
-    
+        if (!in_array($msgText, $this->shops)) {
+            return;
+        }
+
+        $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
+        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->get();
+
+
+        $client = new \GuzzleHttp\Client(['http_errors' => false, 'headers' => ['Content-Type' => 'multipart/form-data']]);
+        $apiToken = "1663064930:AAGjElDtI4SVl0usG8cN2x-LIsloJ11nZPc";
+        $params = [
+            'chat_id' => $chatid,
+        ];
+
+        $url = "https://api.telegram.org/bot$apiToken/sendMessage";
+        $url .= '?' . http_build_query($params);
+
+
+
+        foreach ($coupons as $couponObj) {
+            $html = $msgText;
+            $coupon = json_decode($couponObj->data);
+            dump($coupon);
+            //$html .=  "\n\n\t";
+            $html .= "[ ]({$couponObj->logo->url})";
+            $html .=  "\n\n\t";
+            $html .= $coupon->name;
+            $html .=  "\n\n\t";
+            $html .= $coupon->date_start . " - " . $coupon->date_end;
+            $html .=  "\n\n\t";
+            $html .= $coupon->promocode;
+            $html .=  "\n\n\t";
+            $html .= "[ПОЛУЧИТЬ КУПОН]({$coupon->gotolink})";
+            $html .=  "\n\n\t";
+            $html .= $coupon->description;
+
+            $optionsImgUpload['form_params'] = [
+                'parse_mode' => 'markdown',
+                'text' =>     $html,
+                //'disable_web_page_preview' => false,
+            ];
+
+
+            $res = $client->request('POST', $url,  $optionsImgUpload);
+            $resPhotos =  json_decode($res->getBody()->getContents());
+
+            break;
+        }
+    }
+
     public function shopPage($chatid,  $msgText)
     {
 
@@ -110,14 +161,16 @@ class telegramBot extends Command
             return;
         }
         $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
-        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->get();
+        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->get();
 
+        //dump($coupons);
         $html = "<pre style='text-align:center;'> Магазин: $msgText</pre>";
         $html .= "<pre> </pre>";
         foreach ($coupons as $couponObj) {
+            dump($couponObj->logo->url);
             $coupon = json_decode($couponObj->data);
-            dump($coupon);
-            $html .= "<a href='{$coupon->logo}'>1</a>";
+            //dump($coupon);
+            $html .= "<pre>" . $couponObj->logo->url . "</pre>";
             $html .= "<b>{$coupon->name}</b>";
             //$html .= "<pre>Магазин: {$coupon->shop_name}</pre>";
             $html .= "<pre>Срок действия: {$coupon->date_start} - {$coupon->date_end}</pre>";
@@ -153,7 +206,7 @@ class telegramBot extends Command
             'chat_id' => $chatid,
             'text' =>  $html,
             'parse_mode' => 'HTML',
-            'disable_web_page_preview' => false,
+            //'disable_web_page_preview' => false,
         ]);
         $messageId = $response->getMessageId();
     }
