@@ -60,14 +60,31 @@ class telegramBot extends Command
                 //dump($msg->update_id);
                 if ($msg->update_id > $this->lastId) {
                     Cache::set('telegram_update_id', $this->lastId);
-                    dump($msg);
-                    $this->respond($msg);
+                    //dump($msg);
+
+                    if (isset($msg['callback_query'])) {
+                        $this->callback_query($msg);
+                    } else {
+                        $this->respond($msg);
+                    }
+
                     $this->lastId = $msg->update_id;
                 }
             }
         }
     }
 
+
+    public function callback_query($msg)
+    {
+        dump($msg);
+        $chatid = $msg['callback_query']['message']['chat']['id'];
+        $data = $msg['callback_query']['data'];
+        dump($chatid);
+        dump($data);
+        $txt = 'Товары для детей Товары для дома';
+        $this->sendMsg($chatid, $txt);
+    }
 
 
     public function respond($msg)
@@ -76,6 +93,7 @@ class telegramBot extends Command
         //@test04_2021Bot
         $chatid = $msg['message']['chat']['id'];
         $msgText = $msg['message']['text'];
+
 
         switch ($msgText) {
             case '/start':
@@ -105,7 +123,16 @@ class telegramBot extends Command
 
     public function sendPhoto($chatid, $file = '', $html = '')
     {
+        $inlineLayout = [
+            [
+                Keyboard::inlineButton(['text' => 'Test', 'callback_data' => 'data']),
+                Keyboard::inlineButton(['text' => 'Btn 2', 'callback_data' => 'data_from_btn2'])
+            ]
+        ];
 
+        $keyboard = Keyboard::make([
+            'inline_keyboard' => $inlineLayout
+        ]);
 
         $response = Telegram::sendPhoto(
             [
@@ -113,66 +140,12 @@ class telegramBot extends Command
                 'photo'                => new InputFile($file),
                 'caption'              => $html,
                 'parse_mode' => 'HTML',
+                'reply_markup' => $keyboard,
             ]
         );
-        dump($response);
+        // dump($response);
     }
 
-    public function shopPage2($chatid,  $msgText)
-    {
-
-        if (!in_array($msgText, $this->shops)) {
-            return;
-        }
-
-        $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
-        $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->get();
-
-
-        $client = new \GuzzleHttp\Client(['http_errors' => false, 'headers' => ['Content-Type' => 'multipart/form-data']]);
-        $apiToken = "1663064930:AAGjElDtI4SVl0usG8cN2x-LIsloJ11nZPc";
-        $params = [
-            'chat_id' => $chatid,
-        ];
-
-        $url = "https://api.telegram.org/bot$apiToken/sendMessage";
-        $url .= '?' . http_build_query($params);
-
-
-
-        foreach ($coupons as $couponObj) {
-            $html = $msgText;
-            $coupon = json_decode($couponObj->data);
-            $logo = $couponObj->logo->url;
-            dump($logo);
-            //$html .=  "\n\n\t";
-            $html .=  "\n\n\t";
-            $html .= $coupon->name;
-            $html .=  "\n\n\t";
-            $html .= $coupon->date_start . " - " . $coupon->date_end;
-            $html .=  "\n\n\t";
-            $html .= $coupon->promocode;
-            $html .=  "\n\n\t";
-            $html .= "[ПОЛУЧИТЬ КУПОН]({$coupon->gotolink})";
-            $html .=  "\n\n\t";
-            $html .= $coupon->description;
-            $html .=  "\n\n\t";
-            $html .= "[.](https://images.theconversation.com/files/12874/original/7tw6cstf-1342069683.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=926&fit=clip)";
-            $html .=  "\n\n\t";
-
-            $optionsImgUpload['form_params'] = [
-                'parse_mode' => 'markdown',
-                'text' =>     $html,
-                'disable_web_page_preview' => false,
-            ];
-
-
-            $res = $client->request('POST', $url,  $optionsImgUpload);
-            $resPhotos =  json_decode($res->getBody()->getContents());
-
-            break;
-        }
-    }
 
     public function shopPage($chatid,  $msgText)
     {
