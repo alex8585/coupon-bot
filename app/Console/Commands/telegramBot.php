@@ -7,6 +7,7 @@ use App\Models\Source;
 use Illuminate\Console\Command;
 use Telegram\Bot\Keyboard\Keyboard;
 use Illuminate\Support\Facades\Cache;
+use Telegram\Bot\FileUpload\InputFile;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class telegramBot extends Command
@@ -94,12 +95,28 @@ class telegramBot extends Command
 
                 break;
             default:
-                $this->shopPage2($chatid, $msgText);
+                $this->shopPage($chatid, $msgText);
                 // $txt = 'нужные товары с большими скидками. Покупайте с экономией! Нажимайте /start';
                 //$this->sendMsg($chatid, $txt);
         }
     }
 
+
+
+    public function sendPhoto($chatid, $file = '', $html = '')
+    {
+
+
+        $response = Telegram::sendPhoto(
+            [
+                'chat_id' => $chatid,
+                'photo'                => new InputFile($file),
+                'caption'              => $html,
+                'parse_mode' => 'HTML',
+            ]
+        );
+        dump($response);
+    }
 
     public function shopPage2($chatid,  $msgText)
     {
@@ -126,9 +143,9 @@ class telegramBot extends Command
         foreach ($coupons as $couponObj) {
             $html = $msgText;
             $coupon = json_decode($couponObj->data);
-            dump($coupon);
+            $logo = $couponObj->logo->url;
+            dump($logo);
             //$html .=  "\n\n\t";
-            $html .= "[ ]({$couponObj->logo->url})";
             $html .=  "\n\n\t";
             $html .= $coupon->name;
             $html .=  "\n\n\t";
@@ -139,11 +156,14 @@ class telegramBot extends Command
             $html .= "[ПОЛУЧИТЬ КУПОН]({$coupon->gotolink})";
             $html .=  "\n\n\t";
             $html .= $coupon->description;
+            $html .=  "\n\n\t";
+            $html .= "[.](https://images.theconversation.com/files/12874/original/7tw6cstf-1342069683.jpg?ixlib=rb-1.1.0&q=45&auto=format&w=926&fit=clip)";
+            $html .=  "\n\n\t";
 
             $optionsImgUpload['form_params'] = [
                 'parse_mode' => 'markdown',
                 'text' =>     $html,
-                //'disable_web_page_preview' => false,
+                'disable_web_page_preview' => false,
             ];
 
 
@@ -163,14 +183,16 @@ class telegramBot extends Command
         $shop = Source::where('type', 'shop')->where('title', $msgText)->first();
         $coupons = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->get();
 
+
+        $logo = $coupons->first()->logo->url;
         //dump($coupons);
-        $html = "<pre style='text-align:center;'> Магазин: $msgText</pre>";
-        $html .= "<pre> </pre>";
+        dump($logo);
+        //$html = "<pre style='text-align:center;'> Магазин: $msgText</pre>";
+        $html = '';
         foreach ($coupons as $couponObj) {
-            dump($couponObj->logo->url);
+            //$html .= '<a href="' . 'https://176.119.147.16/storage/logo/1634037122_20551-48e32a7541e22f3b.jpg' . '"> </a>';
+            // $logo = $couponObj->logo->url;
             $coupon = json_decode($couponObj->data);
-            //dump($coupon);
-            $html .= "<pre>" . $couponObj->logo->url . "</pre>";
             $html .= "<b>{$coupon->name}</b>";
             //$html .= "<pre>Магазин: {$coupon->shop_name}</pre>";
             $html .= "<pre>Срок действия: {$coupon->date_start} - {$coupon->date_end}</pre>";
@@ -187,7 +209,7 @@ class telegramBot extends Command
         // <a href=''>inline URL</a>
         // <code>inline fixed-width code</code>
         // <pre>pre-formatted fixed-width code block</pre>";
-        $this->sendHtml($chatid, $html);
+        $this->sendPhoto($chatid, $logo, $html);
     }
 
 
@@ -206,7 +228,7 @@ class telegramBot extends Command
             'chat_id' => $chatid,
             'text' =>  $html,
             'parse_mode' => 'HTML',
-            //'disable_web_page_preview' => false,
+            'disable_web_page_preview' => false,
         ]);
         $messageId = $response->getMessageId();
     }

@@ -15,7 +15,8 @@ class Logo extends Model
 
     public function getUrlAttribute()
     {
-        return URL::to($this->new_url);
+        return "http://176.119.147.16/storage/logo/1634037122_20551-48e32a7541e22f3b.jpg";
+        //return URL::to($this->new_url);
     }
 
     public function coupons()
