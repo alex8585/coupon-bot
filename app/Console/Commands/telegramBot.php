@@ -28,8 +28,8 @@ class telegramBot extends Command
             sleep(1);
             $updates = Telegram::getUpdates();
             foreach ($updates as $update) {
-
                 if ($update->update_id > $this->lastId) {
+                    //dump($update);
                     Cache::set('telegram_update_id', $this->lastId);
 
                     if (isset($update['callback_query'])) {

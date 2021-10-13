@@ -10,6 +10,13 @@ use Illuminate\Support\Str;
 
 class BotMessageHandler
 {
+    // $html = "<b>bold</b>, <strong>bold</strong>
+    // <i>italic</i>, <em>italic</em>
+    // <a href=''>inline URL</a>
+    // <code>inline fixed-width code</code>
+    // <pre>pre-formatted fixed-width code block</pre>";
+
+
     public  function __construct()
     {
         $this->bot = new Bot();
@@ -25,12 +32,20 @@ class BotMessageHandler
         $chunkSize = 2;
         $descriptionLimit = 100;
         $page = isset($params['page']) ? $params['page'] : 1;
+        $shopId = isset($params['shop_id']) ? $params['shop_id'] : null;
+
 
         $category = Source::where('type', 'category')->where('id', $params['category_id'])->first();
         $couponsObj = Coupon::where('type', 'category')
             ->where('source_id', $category->id)->with('logo')
-            ->orderBy('advcampaign_id')->paginate($perPage, '*', 'page', $page);
+            ->orderBy('advcampaign_id');
 
+        if ($shopId) {
+            $couponsObj = $couponsObj->where('advcampaign_id', $shopId);
+        }
+
+        $couponsObj = $couponsObj->paginate($perPage, '*', 'page', $page);
+        $couponsCount = $couponsObj->count();
         $coupons = [];
         foreach ($couponsObj as $couponObj) {
             $elem = $couponObj->toArray();
@@ -39,15 +54,17 @@ class BotMessageHandler
             $coupons[$couponObj->advcampaign_id][] = $elem;
         }
 
-        dump($coupons);
 
         $cnt = 0;
-        foreach ($coupons as $shopId => $shopCouponsAll) {
+        foreach ($coupons as  $shopCouponsAll) {
             $shopCoupons = array_chunk($shopCouponsAll, $chunkSize);
+            dump($shopCoupons);
+            $chunks = count($shopCoupons);
             foreach ($shopCoupons as $chunk) {
                 $html = '';
                 $logo = $chunk[0]['logo'];
                 $shopName = $chunk[0]['data']['shop_name'];
+                $shop_id = $chunk[0]['data']['advcampaign_id'];
                 foreach ($chunk as $couponNum => $coupon) {
                     $data = $coupon['data'];
                     $description = Str::limit($data['description'],  $descriptionLimit,  '...');
@@ -55,7 +72,6 @@ class BotMessageHandler
                     if ($couponNum == 0) {
                         $html .= "<b>{$shopName}</b><pre> </pre>";
                     }
-
                     $html .= "<i>{$data['name']}</i>";
                     $html .= "<pre>Срок действия: {$data['date_start']} - {$data['date_end']}</pre>";
                     $html .= "<pre>Промокод: {$data['promocode']}</pre>";
@@ -64,17 +80,37 @@ class BotMessageHandler
                     $html .= "<pre> </pre>";
                     $cnt++;
                 }
-                //dd($logo);
+                //dump($chunks);
+                if ($cnt == $couponsCount) {
+                    $keybordParams = [
+                        'action' => 'categoryPage',
+                        'category_id' => $params['category_id'],
+                        'shop_id' => $shopId,
+                    ];
+                    if (!$shopId) {
+                        $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams, $shopName, $shop_id);
+                    } else {
+                        $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams, "Сбросить фильтр");
+                    }
 
-                $keybordParams = [
-                    'action' => 'categoryPage',
-                    'category_id' => $params['category_id'],
-                ];
-                $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams);
-                if ($cnt == $perPage) {
                     $this->bot->sendPhoto($chatid, $logo, $html, $keyboardArr);
                 } else {
-                    $this->bot->sendPhoto($chatid, $logo, $html);
+                    //$this->bot->sendPhoto($chatid, $logo, $html);
+
+                    $keybordParams = [
+                        'action' => 'categoryPage',
+                        'category_id' => $params['category_id'],
+                        'page' => 1
+                    ];
+
+                    if (!$shopId) {
+                        $keybordParams['shop_id'] = $shop_id;
+                        $keyboardArr = $this->paginator->getFilterKeybord($shopName, $keybordParams);
+                    } else {
+                        $keybordParams['shop_id'] = null;
+                        $keyboardArr = $this->paginator->getFilterKeybord("Сбросить фильтр", $keybordParams);
+                    }
+                    $this->bot->sendPhoto($chatid, $logo, $html, $keyboardArr);
                 }
             }
         }
@@ -85,8 +121,8 @@ class BotMessageHandler
 
     public function shopPage($chatid,  $params)
     {
-        $perPage = 2;
-        $chunkSize = 1;
+        $perPage = 4;
+        $chunkSize = 2;
         $descriptionLimit = 100;
         $page = isset($params['page']) ? $params['page'] : 1;
 
@@ -96,12 +132,14 @@ class BotMessageHandler
 
         $logo = $couponsObj->first()->logo->url;
 
+        $couponsCount = $couponsObj->count();
         $couponsArrPaginator = $couponsObj->toArray();
         $couponsArr = $couponsArrPaginator['data'];
 
         $shopCoupons = array_chunk($couponsArr, $chunkSize);
 
         $cnt = 0;
+
         foreach ($shopCoupons as $chunk) {
             $html = '';
             foreach ($chunk as $couponNum => $couponArr) {
@@ -116,26 +154,23 @@ class BotMessageHandler
                 $cnt++;
             }
 
-            $keybordParams = [
-                'action' => 'shopPage',
-                'shop_id' => $params['shop_id'],
-            ];
-            $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams);
-            if ($cnt == count($chunk)) {
-                dump(count($chunk));
+            if ($cnt == $couponsCount) {
+                $keybordParams = [
+                    'action' => 'shopPage',
+                    'shop_id' => $params['shop_id'],
+                ];
+                $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams);
+
+
                 $this->bot->sendPhoto($chatid, $logo, $html, $keyboardArr);
             } else {
                 $this->bot->sendPhoto($chatid, $logo, $html);
             }
         }
 
-        // $html = "<b>bold</b>, <strong>bold</strong>
-        // <i>italic</i>, <em>italic</em>
-        // <a href=''>inline URL</a>
-        // <code>inline fixed-width code</code>
-        // <pre>pre-formatted fixed-width code block</pre>";
 
-        //dump($coupons);
+
+
 
 
         return true;

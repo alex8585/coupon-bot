@@ -13,7 +13,12 @@ class Bot
     }
     public function sendPhoto($chatid, $file = '', $html = '', $keyboardArr = [])
     {
-        $keyboard = $this->makeKeybord($keyboardArr);
+        if (is_array($keyboardArr)) {
+
+            $keyboard = $this->makeKeybord($keyboardArr);
+        } else {
+            $keyboard = $keyboardArr;
+        }
 
         $params = [
             'chat_id' => $chatid,

@@ -9,6 +9,7 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 use App\Utils\Bot;
 use App\Utils\Paginator;
 use Illuminate\Support\Facades\Log;
+use App\Utils\UpdatesHandler;
 
 class CouponBotController extends Controller
 {

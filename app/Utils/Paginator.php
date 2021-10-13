@@ -2,25 +2,50 @@
 
 namespace App\Utils;
 
+use Telegram\Bot\Keyboard\Keyboard;
+
 
 
 class Paginator
 {
-    public function getKeybord($paginator, $params)
+
+
+
+
+    public function getFilterKeybord($shopName, $params)
     {
         $callback_data = $params;
 
-        $keybord = [];
+        $keybord[] = ['text' => $shopName, 'callback_data' => http_build_query($callback_data)];
+
+        return $keybord;
+    }
+
+    public function getKeybord($paginator, $params, $filterName, $filterShopId = null)
+    {
+        $callback_data = $params;
+        $filter = $params;
+        $filter['shop_id'] = $filterShopId;
+
+        $inlineLayout = [];
         $pages = $this->getPagesArr($paginator);
+        $inlineLayout[0][] = Keyboard::inlineButton(['text' => $filterName, 'callback_data' => http_build_query($filter)]);
+
         if ($pages['prev']) {
             $callback_data['page'] = $pages['prev'];
-            $keybord[] = ['text' => 'Предыдущая', 'callback_data' => http_build_query($callback_data)];
+            $inlineLayout[1][] = Keyboard::inlineButton(['text' => 'Предыдущая', 'callback_data' => http_build_query($callback_data)]);
         }
         if ($pages['next']) {
             $callback_data['page'] = $pages['next'];
-            $keybord[] = ['text' => 'Следующая', 'callback_data' => http_build_query($callback_data)];
+            $inlineLayout[1][] = Keyboard::inlineButton(['text' => 'Следующая', 'callback_data' => http_build_query($callback_data)]);
         }
-        return $keybord;
+        // $inlineLayout[] = $row1;
+
+        // $inlineLayout[] = $row2;
+        $keyboard = Keyboard::make([
+            'inline_keyboard' => $inlineLayout
+        ]);
+        return $keyboard;
     }
 
 
