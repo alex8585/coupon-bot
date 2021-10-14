@@ -21,7 +21,7 @@ class Paginator
         return $keybord;
     }
 
-    public function getKeybord($paginator, $params, $filterName, $filterShopId = null)
+    public function getKeybord($paginator, $params, $filterName = '', $filterShopId = null)
     {
         $callback_data = $params;
         $filter = $params;
@@ -29,19 +29,17 @@ class Paginator
 
         $inlineLayout = [];
         $pages = $this->getPagesArr($paginator);
-        $inlineLayout[0][] = Keyboard::inlineButton(['text' => $filterName, 'callback_data' => http_build_query($filter)]);
+        $inlineLayout[0][] = Keyboard::inlineButton(['text' =>  $filterName, 'callback_data' => http_build_query($filter)]);
 
         if ($pages['prev']) {
             $callback_data['page'] = $pages['prev'];
-            $inlineLayout[1][] = Keyboard::inlineButton(['text' => 'Предыдущая', 'callback_data' => http_build_query($callback_data)]);
+            $inlineLayout[1][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Туда", 'callback_data' => http_build_query($callback_data)]);
         }
         if ($pages['next']) {
             $callback_data['page'] = $pages['next'];
-            $inlineLayout[1][] = Keyboard::inlineButton(['text' => 'Следующая', 'callback_data' => http_build_query($callback_data)]);
+            $inlineLayout[1][] = Keyboard::inlineButton(['text' => "Сюда \xE2\x9E\xA1", 'callback_data' => http_build_query($callback_data)]);
         }
-        // $inlineLayout[] = $row1;
 
-        // $inlineLayout[] = $row2;
         $keyboard = Keyboard::make([
             'inline_keyboard' => $inlineLayout
         ]);

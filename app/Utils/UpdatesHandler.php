@@ -3,10 +3,16 @@
 namespace App\Utils;
 
 use App\Utils\Bot;
+use Telegram\Bot\Actions;
 use App\Utils\BotMessageHandler;
+use Telegram\Bot\Laravel\Facades\Telegram;
+
+
+
 
 class UpdatesHandler
 {
+
     public function __construct()
     {
         $this->bot = new Bot();
@@ -19,6 +25,7 @@ class UpdatesHandler
         $chatid = $msg['chat']['id'];
         $msgText = $msg['text'];
         dump($msgText);
+        Telegram::sendChatAction(['action' => Actions::TYPING, 'chat_id' => $chatid]);
         switch ($msgText) {
             case '/start':
                 $this->msgHandler->mainMenu($chatid);
@@ -42,7 +49,7 @@ class UpdatesHandler
         $action = isset($params['action']) ? $params['action'] : null;
         dump($data);
         dump($params);
-
+        Telegram::sendChatAction(['action' => Actions::TYPING, 'chat_id' => $chatid]);
         switch ($action) {
             case 'categoriesMenu':
                 $this->msgHandler->categoriesMenu($chatid);

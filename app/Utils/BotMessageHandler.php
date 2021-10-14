@@ -70,14 +70,13 @@ class BotMessageHandler
                     $description = Str::limit($data['description'],  $descriptionLimit,  '...');
 
                     if ($couponNum == 0) {
-                        $html .= "<b>{$shopName}</b><pre> </pre>";
+                        // $html .= "<b>{$shopName}</b><pre> </pre>";
                     }
-                    $html .= "<i>{$data['name']}</i>";
-                    $html .= "<pre>Срок действия: {$data['date_start']} - {$data['date_end']}</pre>";
-                    $html .= "<pre>Промокод: {$data['promocode']}</pre>";
-                    $html .= "<a href='{$data['gotolink']}'>ПОЛУЧИТЬ КУПОН</a>";
-                    $html .= "<pre>{$description}</pre>";
-                    $html .= "<pre> </pre>";
+                    $html .= "<b>{$data['name']}</b>" . PHP_EOL;
+                    $html .= "<pre>Срок действия: {$data['date_start']} - {$data['date_end']}</pre>" . PHP_EOL;
+                    $html .= "<pre>Промокод: {$data['promocode']}</pre>" . PHP_EOL;
+                    $html .= "<a href='{$data['gotolink']}'>ПОЛУЧИТЬ КУПОН</a>" . PHP_EOL;
+                    $html .= "<pre>{$description}</pre>" . PHP_EOL;
                     $cnt++;
                 }
                 //dump($chunks);
@@ -88,9 +87,9 @@ class BotMessageHandler
                         'shop_id' => $shopId,
                     ];
                     if (!$shopId) {
-                        $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams, $shopName, $shop_id);
+                        $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams, "\xE2\x9C\x85 " . $shopName, $shop_id);
                     } else {
-                        $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams, "Сбросить фильтр");
+                        $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams, "\xE2\x9D\x8C Сбросить фильтр");
                     }
 
                     $this->bot->sendPhoto($chatid, $logo, $html, $keyboardArr);
@@ -108,7 +107,7 @@ class BotMessageHandler
                         $keyboardArr = $this->paginator->getFilterKeybord($shopName, $keybordParams);
                     } else {
                         $keybordParams['shop_id'] = null;
-                        $keyboardArr = $this->paginator->getFilterKeybord("Сбросить фильтр", $keybordParams);
+                        $keyboardArr = $this->paginator->getFilterKeybord("\xE2\x9D\x8C Сбросить фильтр", $keybordParams);
                     }
                     $this->bot->sendPhoto($chatid, $logo, $html, $keyboardArr);
                 }
@@ -145,12 +144,11 @@ class BotMessageHandler
             foreach ($chunk as $couponNum => $couponArr) {
                 $coupon = json_decode($couponArr['data'], true);
                 $description = Str::limit($coupon['description'],  $descriptionLimit,  '...');
-                $html .= "<b>{$coupon['name']}</b>";
-                $html .= "<pre>Срок действия: {$coupon['date_start']} - {$coupon['date_end']}</pre>";
-                $html .= "<pre>Промокод: {$coupon['promocode']}</pre>";
-                $html .= "<a href='{$coupon['gotolink']}'>ПОЛУЧИТЬ КУПОН</a>";
+                $html .= "<b>{$coupon['name']}</b>". PHP_EOL;;
+                $html .= "<pre>Срок действия: {$coupon['date_start']} - {$coupon['date_end']}</pre>". PHP_EOL;;
+                $html .= "<pre>Промокод: {$coupon['promocode']}</pre>". PHP_EOL;
+                $html .= "<a href='{$coupon['gotolink']}'>ПОЛУЧИТЬ КУПОН</a>". PHP_EOL;
                 $html .= "<pre>{$description}</pre>";
-                $html .= "<pre> </pre>";
                 $cnt++;
             }
 
@@ -183,14 +181,14 @@ class BotMessageHandler
         $categoriesCallback['action'] = 'categoriesMenu';
         $shopsCallback['action'] = 'shopsMenu';
         return [
-            ['text' => 'КАТЕГОРИИ', 'callback_data' => http_build_query($categoriesCallback)],
-            ['text' => 'МАГАЗИНЫ', 'callback_data' => http_build_query($shopsCallback)]
+            ['text' => '🗄 КАТЕГОРИИ', 'callback_data' => http_build_query($categoriesCallback)],
+            ['text' => '🛍 МАГАЗИНЫ', 'callback_data' => http_build_query($shopsCallback)]
         ];
     }
 
     public function mainMenu($chatid)
     {
-        $txt = 'Как ищем?';
+        $txt = "Как ищем ?";
 
         $keyboardArr = $this->mainMenuKeybord();
         $this->bot->sendMenu($chatid, $keyboardArr, $txt);

@@ -37,7 +37,7 @@ class Bot
         if (!$keyboardArr) {
             return [];
         }
-        $keyboardArr = array_chunk($keyboardArr, 3);
+        $keyboardArr = array_chunk($keyboardArr, 2);
 
         $inlineLayout = [];
         foreach ($keyboardArr as $row) {
