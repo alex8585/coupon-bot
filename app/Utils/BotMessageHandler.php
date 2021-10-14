@@ -58,8 +58,7 @@ class BotMessageHandler
         $cnt = 0;
         foreach ($coupons as  $shopCouponsAll) {
             $shopCoupons = array_chunk($shopCouponsAll, $chunkSize);
-            dump($shopCoupons);
-            $chunks = count($shopCoupons);
+
             foreach ($shopCoupons as $chunk) {
                 $html = '';
                 $logo = $chunk[0]['logo'];
@@ -68,6 +67,7 @@ class BotMessageHandler
                 foreach ($chunk as $couponNum => $coupon) {
                     $data = $coupon['data'];
                     $description = Str::limit($data['description'],  $descriptionLimit,  '...');
+                    $gotolink = !empty($data['gotolink']) ? $data['gotolink'] : $data['oldGotolink'];
 
                     if ($couponNum == 0) {
                         // $html .= "<b>{$shopName}</b><pre> </pre>";
@@ -75,11 +75,11 @@ class BotMessageHandler
                     $html .= "<b>{$data['name']}</b>" . PHP_EOL;
                     $html .= "<pre>Срок действия: {$data['date_start']} - {$data['date_end']}</pre>" . PHP_EOL;
                     $html .= "<pre>Промокод: {$data['promocode']}</pre>" . PHP_EOL;
-                    $html .= "<a href='{$data['gotolink']}'>ПОЛУЧИТЬ КУПОН</a>" . PHP_EOL;
+                    $html .= "<a href='{$gotolink}'>ПОЛУЧИТЬ КУПОН</a>" . PHP_EOL;
                     $html .= "<pre>{$description}</pre>" . PHP_EOL;
                     $cnt++;
                 }
-                //dump($chunks);
+
                 if ($cnt == $couponsCount) {
                     $keybordParams = [
                         'action' => 'categoryPage',
@@ -104,7 +104,7 @@ class BotMessageHandler
 
                     if (!$shopId) {
                         $keybordParams['shop_id'] = $shop_id;
-                        $keyboardArr = $this->paginator->getFilterKeybord($shopName, $keybordParams);
+                        $keyboardArr = $this->paginator->getFilterKeybord("\xE2\x9C\x85 " . $shopName, $keybordParams);
                     } else {
                         $keybordParams['shop_id'] = null;
                         $keyboardArr = $this->paginator->getFilterKeybord("\xE2\x9D\x8C Сбросить фильтр", $keybordParams);
@@ -144,10 +144,11 @@ class BotMessageHandler
             foreach ($chunk as $couponNum => $couponArr) {
                 $coupon = json_decode($couponArr['data'], true);
                 $description = Str::limit($coupon['description'],  $descriptionLimit,  '...');
-                $html .= "<b>{$coupon['name']}</b>". PHP_EOL;;
-                $html .= "<pre>Срок действия: {$coupon['date_start']} - {$coupon['date_end']}</pre>". PHP_EOL;;
-                $html .= "<pre>Промокод: {$coupon['promocode']}</pre>". PHP_EOL;
-                $html .= "<a href='{$coupon['gotolink']}'>ПОЛУЧИТЬ КУПОН</a>". PHP_EOL;
+                $gotolink = !empty($coupon['gotolink']) ? $coupon['gotolink'] : $coupon['oldGotolink'];
+                $html .= "<b>{$coupon['name']}</b>" . PHP_EOL;;
+                $html .= "<pre>Срок действия: {$coupon['date_start']} - {$coupon['date_end']}</pre>" . PHP_EOL;;
+                $html .= "<pre>Промокод: {$coupon['promocode']}</pre>" . PHP_EOL;
+                $html .= "<a href='{$gotolink}'>ПОЛУЧИТЬ КУПОН</a>" . PHP_EOL;
                 $html .= "<pre>{$description}</pre>";
                 $cnt++;
             }
@@ -165,11 +166,6 @@ class BotMessageHandler
                 $this->bot->sendPhoto($chatid, $logo, $html);
             }
         }
-
-
-
-
-
 
         return true;
     }

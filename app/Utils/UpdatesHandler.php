@@ -23,9 +23,14 @@ class UpdatesHandler
     {
 
         $chatid = $msg['chat']['id'];
-        $msgText = $msg['text'];
-        dump($msgText);
+        $msgText = isset($msg['text']) ? $msg['text'] : null;
         Telegram::sendChatAction(['action' => Actions::TYPING, 'chat_id' => $chatid]);
+
+        if (!$msgText) {
+            $this->msgHandler->mainMenu($chatid);
+            return;
+        }
+
         switch ($msgText) {
             case '/start':
                 $this->msgHandler->mainMenu($chatid);
@@ -62,6 +67,9 @@ class UpdatesHandler
                 break;
             case 'shopPage':
                 $this->msgHandler->shopPage($chatid, $params);
+                break;
+            case 'menuBack':
+                $this->msgHandler->mainMenu($chatid);
                 break;
             default:
                 $this->bot->sendMsg($chatid, 'Я не знаю такую команду');

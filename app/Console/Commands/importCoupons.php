@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\Source;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic as Image;
 
@@ -107,7 +108,27 @@ class importCoupons extends Command
         return $logo->id;
     }
 
+    public function convertUrl($oldUrl, $ip = null)
+    {
+        $url = str_replace("/g/", "/tpt/", $oldUrl);
+        if (strpos($url, '?') === false) {
+            $url .= '?country_code=RU';
+        } else {
+            $url .= '&country_code=RU';
+        }
+        $url .= "&user_agent=" . urlencode("TelegramBot (like TwitterBot)");
+        $url .= "&referer=coupon-bot";
 
+        if ($ip) {
+            $url .= "&ip_addr=$ip";
+        }
+
+        $response = Http::get($url)->json();
+        if (isset($response[0])) {
+            return  $response[0];
+        }
+        return null;
+    }
     /**
      * Execute the console command.
      *
@@ -143,9 +164,10 @@ class importCoupons extends Command
         // </categories>
         // <special_category/>
 
+
+
         $this->importSorces();
 
-        //dd('1');
 
 
         $client = new Client();
@@ -171,8 +193,12 @@ class importCoupons extends Command
             $crawler->filter('coupon')->each(function ($node) use (&$coupons, $shops) {
                 $advcampaign_id = $node->filter('advcampaign_id')->text();
                 $old_logo  = $node->filter('logo')->text();
+                $oldGotolink = $node->filter('gotolink')->text('');
 
+                $gotolink = $this->convertUrl($oldGotolink);
                 $logo_id = $this->convertImg($old_logo);
+
+
                 $coupons[] = [
                     'shop_name' => $shops[$advcampaign_id]['name'],
                     'shop_site' => $shops[$advcampaign_id]['site'],
@@ -181,7 +207,8 @@ class importCoupons extends Command
                     'date_start' => $node->filter('date_start')->text(''),
                     'date_end' => $node->filter('date_end')->text(''),
                     'promocode' => $node->filter('promocode')->text(''),
-                    'gotolink' => $node->filter('gotolink')->text(''),
+                    'oldGotolink' => $oldGotolink,
+                    'gotolink' => $gotolink,
                     'advcampaign_id' => $advcampaign_id,
                     'rating' => $node->filter('rating')->text(),
                     'description' => $node->filter('description')->text(''),
