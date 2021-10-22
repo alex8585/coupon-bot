@@ -14,6 +14,7 @@ class RedirectController extends Controller
             return 'Something went wrong';
         }
         $newUrl = $urlConverter->getOuterUrl($url);
+
         return redirect($newUrl);
     }
 }
