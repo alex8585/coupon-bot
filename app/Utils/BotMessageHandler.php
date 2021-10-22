@@ -2,6 +2,7 @@
 
 namespace App\Utils;
 
+use App\Utils\rlConverter;
 use App\Utils\Bot;
 use App\Models\Coupon;
 use App\Models\Source;
@@ -21,6 +22,7 @@ class BotMessageHandler
     {
         $this->bot = new Bot();
         $this->paginator = new Paginator();
+        $this->url = new UrlConverter();
     }
 
     public function categoryPage($chatid,  $params)
@@ -64,7 +66,7 @@ class BotMessageHandler
                 foreach ($chunk as $couponNum => $coupon) {
                     $data = $coupon['data'];
                     $description = Str::limit($data['description'],  $descriptionLimit,  '...');
-                    $gotolink = !empty($data['gotolink']) ? $data['gotolink'] : $data['oldGotolink'];
+                    $gotolink = $this->url->getInnerUrl($data['oldGotolink']);
 
                     if ($couponNum == 0) {
                         // $html .= "<b>{$shopName}</b><pre> </pre>";
@@ -141,7 +143,8 @@ class BotMessageHandler
             foreach ($chunk as $couponNum => $couponArr) {
                 $coupon = json_decode($couponArr['data'], true);
                 $description = Str::limit($coupon['description'],  $descriptionLimit,  '...');
-                $gotolink = !empty($coupon['gotolink']) ? $coupon['gotolink'] : $coupon['oldGotolink'];
+                //$gotolink = !empty($coupon['gotolink']) ? $coupon['gotolink'] : $coupon['oldGotolink'];
+                $gotolink = $this->url->getInnerUrl($coupon['oldGotolink']);
                 $html .= "<b>{$coupon['name']}</b>" . PHP_EOL;;
                 $html .= "<pre>Срок действия: {$coupon['date_start']} - {$coupon['date_end']}</pre>" . PHP_EOL;;
                 $html .= "<pre>Промокод: {$coupon['promocode']}</pre>" . PHP_EOL;
@@ -189,8 +192,8 @@ class BotMessageHandler
 
     public function categoriesMenu($chatid)
     {
- 
-	$categories = Source::where('type', 'category')->get()->toArray();
+
+        $categories = Source::where('type', 'category')->get()->toArray();
         $txt = 'Выберите категорию';
         $callback_data = ['action' => 'categoryPage'];
         $keyboardArr = [];
@@ -206,7 +209,7 @@ class BotMessageHandler
 
     public function shopsMenu($chatid)
     {
-	$shops = Source::where('type', 'shop')->get()->toArray();
+        $shops = Source::where('type', 'shop')->get()->toArray();
         $txt = 'Выберите магазин';
         $callback_data = ['action' => 'shopPage'];
         $keyboardArr = [];
