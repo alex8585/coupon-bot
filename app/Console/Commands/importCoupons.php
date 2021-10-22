@@ -41,6 +41,27 @@ class importCoupons extends Command
     }
 
 
+    public function convertUrl($oldUrl)
+    {
+        $url = str_replace("/g/", "/tpt/", $oldUrl);
+
+        if (strpos($url, '?') === false) {
+            $url .= "?user_agent=" . urlencode("TelegramBot (like TwitterBot)");
+        } else {
+            $url .= "&user_agent=" . urlencode("TelegramBot (like TwitterBot)");
+        }
+        //$url .= '&country_code=RU';
+        $url .= "&referer=coupon-bot";
+
+        $response = Http::get($url)->json();
+        if (isset($response[0])) {
+            return  $response[0];
+        }
+
+        return null;
+    }
+
+
     public function importSorces()
     {
         // $path = Storage::path('');
@@ -64,7 +85,13 @@ class importCoupons extends Command
             $client = new Client();
             $crawler = $client->request('GET', $shop['url']);
 
-            $old_logo  = $crawler->filter('logo')->first()->text();
+
+            $old_logoElem  = $crawler->filter('logo');
+
+            $old_logo  = $old_logoElem->first()->text('');
+            if (!$old_logo) {
+                continue;
+            }
 
 
             $logo_id = $this->convertImg($old_logo);
@@ -108,27 +135,7 @@ class importCoupons extends Command
         return $logo->id;
     }
 
-    public function convertUrl($oldUrl, $ip = null)
-    {
-        $url = str_replace("/g/", "/tpt/", $oldUrl);
-        if (strpos($url, '?') === false) {
-            $url .= '?country_code=RU';
-        } else {
-            $url .= '&country_code=RU';
-        }
-        $url .= "&user_agent=" . urlencode("TelegramBot (like TwitterBot)");
-        $url .= "&referer=coupon-bot";
 
-        if ($ip) {
-            $url .= "&ip_addr=$ip";
-        }
-
-        $response = Http::get($url)->json();
-        if (isset($response[0])) {
-            return  $response[0];
-        }
-        return null;
-    }
     /**
      * Execute the console command.
      *

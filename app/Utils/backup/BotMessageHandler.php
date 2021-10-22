@@ -21,6 +21,9 @@ class BotMessageHandler
     {
         $this->bot = new Bot();
         $this->paginator = new Paginator();
+
+        $this->shops = Source::where('type', 'shop')->get()->toArray();
+        $this->categories = Source::where('type', 'category')->get()->toArray();
     }
 
     public function categoryPage($chatid,  $params)
@@ -32,9 +35,9 @@ class BotMessageHandler
         $shopId = isset($params['shop_id']) ? $params['shop_id'] : null;
 
 
-        //$category = Source::where('type', 'category')->where('id', $params['category_id'])->first();
+        $category = Source::where('type', 'category')->where('id', $params['category_id'])->first();
         $couponsObj = Coupon::where('type', 'category')
-            ->where('source_id', $params['category_id'])->with('logo')
+            ->where('source_id', $category->id)->with('logo')
             ->orderBy('advcampaign_id');
 
         if ($shopId) {
@@ -123,8 +126,8 @@ class BotMessageHandler
         $page = isset($params['page']) ? $params['page'] : 1;
 
 
-        //$shop = Source::where('type', 'shop')->where('id', $params['shop_id'])->first();
-        $couponsObj = Coupon::where('type', 'shop')->where('source_id', $params['shop_id'])->with('logo')->paginate($perPage, '*', 'page', $page);
+        $shop = Source::where('type', 'shop')->where('id', $params['shop_id'])->first();
+        $couponsObj = Coupon::where('type', 'shop')->where('source_id', $shop->id)->with('logo')->paginate($perPage, '*', 'page', $page);
 
         $logo = $couponsObj->first()->logo->url;
 
@@ -189,12 +192,10 @@ class BotMessageHandler
 
     public function categoriesMenu($chatid)
     {
- 
-	$categories = Source::where('type', 'category')->get()->toArray();
         $txt = 'Выберите категорию';
         $callback_data = ['action' => 'categoryPage'];
         $keyboardArr = [];
-        foreach ($categories as $cat) {
+        foreach ($this->categories as $cat) {
             $callback_data['category_id'] = $cat['id'];
             $keyboardArr[] = [
                 'text' => $cat['title'],
@@ -206,11 +207,10 @@ class BotMessageHandler
 
     public function shopsMenu($chatid)
     {
-	$shops = Source::where('type', 'shop')->get()->toArray();
         $txt = 'Выберите магазин';
         $callback_data = ['action' => 'shopPage'];
         $keyboardArr = [];
-        foreach ($shops as $shop) {
+        foreach ($this->shops as $shop) {
             $callback_data['shop_id'] = $shop['id'];
             $keyboardArr[] = [
                 'text' => $shop['title'],
