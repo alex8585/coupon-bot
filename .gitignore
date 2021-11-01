@@ -16,3 +16,5 @@ yarn-error.log
 cert
 routes/web.php
 backup
+1.php
+config/settings.php

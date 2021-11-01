@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManagerStatic as Image;
+//use Intervention\Image\ImageManagerStatic as Image;
 
 class importCoupons extends Command
 {
@@ -38,25 +38,28 @@ class importCoupons extends Command
     {
         parent::__construct();
         Image::configure(array('driver' => 'imagick'));
+        $this->logosArr = $this->getLogos();
+        $this->logosPath = storage_path('app/public/logo/');
     }
 
 
     public function convertUrl($oldUrl)
     {
-        $url = str_replace("/g/", "/tpt/", $oldUrl);
 
-        if (strpos($url, '?') === false) {
-            $url .= "?user_agent=" . urlencode("TelegramBot (like TwitterBot)");
-        } else {
-            $url .= "&user_agent=" . urlencode("TelegramBot (like TwitterBot)");
-        }
-        //$url .= '&country_code=RU';
-        $url .= "&referer=coupon-bot";
+        // $url = str_replace("/g/", "/tpt/", $oldUrl);
 
-        $response = Http::get($url)->json();
-        if (isset($response[0])) {
-            return  $response[0];
-        }
+        // if (strpos($url, '?') === false) {
+        //     $url .= "?user_agent=" . urlencode("TelegramBot (like TwitterBot)");
+        // } else {
+        //     $url .= "&user_agent=" . urlencode("TelegramBot (like TwitterBot)");
+        // }
+        // //$url .= '&country_code=RU';
+        // $url .= "&referer=coupon-bot";
+
+        // $response = Http::get($url)->json();
+        // if (isset($response[0])) {
+        //     return  $response[0];
+        // }
 
         return null;
     }
@@ -64,24 +67,24 @@ class importCoupons extends Command
 
     public function importSorces()
     {
-        // $path = Storage::path('');
-        // $path =  base_path() . "/" . 'categories.json';
         $cats = config('settings.categories');
         $shops = config('settings.shops');
         $updatedIds = [];
         foreach ($cats  as $cat) {
+            dump($cat);
             Source::updateOrCreate(
                 ['title' => $cat['name'], 'type' => 'category'],
                 ['url' => $cat['url']]
             );
             $updatedIds[] = $cat['name'];
         }
+
         Source::where('type', 'category')->whereNotIn('title', $updatedIds)->delete();
 
 
 
         foreach ($shops  as $shop) {
-
+            dump($shop);
             $client = new Client();
             $crawler = $client->request('GET', $shop['url']);
 
@@ -106,23 +109,42 @@ class importCoupons extends Command
     }
 
 
+    public function getLogos()
+    {
+        $logoS = Logo::all()->pluck('id', 'old_url');
+        return  $logoS;
+    }
+
     public function convertImg($oldUrl)
     {
 
-        $logo = Logo::where('old_url', $oldUrl)->first();
-        if ($logo) {
-            return $logo->id;
+        if (isset($this->logosArr[$oldUrl])) {
+            return $this->logosArr[$oldUrl];
         }
         $pathParts = pathinfo($oldUrl);
-        $fileName = time() . "_" . $pathParts['filename'] . '.jpg';
 
-        $img = Image::make($oldUrl);
+        $fileName = time() . "_" . $pathParts['filename'] . '.' . $pathParts['extension'];
 
-        $path = storage_path('app/public/logo/') . $fileName;
 
-        //http://local-coupon-bot.com/storage/logo/bar.jpg
+        // if ($pathParts['extension'] == 'svg') {
+        //     $fileName = time() . "_" . $pathParts['filename'] . '.jpg';
+        //     $path = storage_path('app/public/logo/') . $fileName;
 
-        $img->save($path);
+        //     $contents = file_get_contents($oldUrl);
+        //     file_put_contents($path, $contents);
+        //     dd('1');
+
+
+        //     //$img = Image::make($contents);
+        //     //dump('2');
+        //     //$img->save($path);
+        // } else {
+
+        $path = $this->logosPath . $fileName;
+        $contents = file_get_contents($oldUrl);
+        file_put_contents($path, $contents);
+        // }
+
 
         $newUrl = "/storage/logo/{$fileName}";
 
@@ -131,6 +153,8 @@ class importCoupons extends Command
         $logo->old_url = $oldUrl;
         $logo->new_url = $newUrl;
         $logo->save();
+
+        $this->logosArr[$oldUrl] = $logo->id;
 
         return $logo->id;
     }
@@ -141,6 +165,22 @@ class importCoupons extends Command
      *
      * @return int
      */
+    public function allImagesSvgToPng()
+    {
+
+        $files = array_diff(scandir($this->logosPath), array('..', '.'));
+        foreach ($files as $file) {
+            $pathParts = pathinfo($file);
+            if (!($pathParts['extension'] == 'svg')) continue;
+
+            $newFilePath = $this->logosPath . $pathParts['filename'] . '.png';
+
+            $filePath = $this->logosPath . $file;
+            $output = shell_exec("inkscape $filePath -e $newFilePath");
+            dump([$filePath, $output]);
+        }
+    }
+
     public function handle()
     {
 
@@ -172,7 +212,6 @@ class importCoupons extends Command
         // <special_category/>
 
 
-
         $this->importSorces();
 
 
@@ -184,6 +223,7 @@ class importCoupons extends Command
             $crawler = $client->request('GET', $source->url);
 
 
+            dump($source);
 
             $shops = [];
             $crawler->filter('advcampaign')->each(function ($node) use (&$shops) {
@@ -194,18 +234,30 @@ class importCoupons extends Command
                 ];
             });
 
-
-
+            $time_start = microtime(true);
             $coupons = [];
-            $crawler->filter('coupon')->each(function ($node) use (&$coupons, $shops) {
+            $crawler->filter('coupon')->each(function ($node) use (&$coupons, $shops, $source) {
+                dump($source->id);
+                dump('ok0');
                 $advcampaign_id = $node->filter('advcampaign_id')->text();
                 $old_logo  = $node->filter('logo')->text();
                 $oldGotolink = $node->filter('gotolink')->text('');
+                dump([$oldGotolink, $old_logo]);
+
+                // if ($old_logo == 'https://cdn.admitad.com/campaign/images/2021/4/23/19925-27ff0d53718c50bb.svg') {
+                //     return;
+                // }
+
 
                 $gotolink = $this->convertUrl($oldGotolink);
+                dump('convertUrl');
                 $logo_id = $this->convertImg($old_logo);
 
-
+                dump('convertImg');
+                if (!$oldGotolink) {
+                    return;
+                }
+                dump('ok1');
                 $coupons[] = [
                     'shop_name' => $shops[$advcampaign_id]['name'],
                     'shop_site' => $shops[$advcampaign_id]['site'],
@@ -222,10 +274,16 @@ class importCoupons extends Command
                     'logo_id' => $logo_id,
                     'old_logo' => $old_logo,
                 ];
+                dump('ok2');
             });
+            $time_end = microtime(true);
+            $execution_time = ($time_end - $time_start);
+            dump([$source, $execution_time]);
 
+            dump($coupons);
             $updatedIds = [];
             foreach ($coupons as $coupon) {
+
                 Coupon::updateOrCreate(
                     ['source_id' => $source->id, 'outher_coupon_id' => $coupon['id']],
                     ['type' => $source->type, 'logo_id' => $coupon['logo_id'], 'advcampaign_id' => $coupon['advcampaign_id'], 'data' => json_encode($coupon)]
@@ -237,7 +295,7 @@ class importCoupons extends Command
         }
 
 
-
+        $this->allImagesSvgToPng();
 
         //dd($coupons);
 

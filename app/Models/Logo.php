@@ -15,7 +15,17 @@ class Logo extends Model
 
     public function getUrlAttribute()
     {
-        return public_path($this->new_url);
+        //return public_path($this->new_url);
+        $pathParts = pathinfo($this->new_url);
+        if ($pathParts['extension'] == 'svg') {
+            $path = $pathParts['dirname'] . '/' .  $pathParts['filename'] . '.png';
+            //dump($path);
+            return public_path($path);
+        } else {
+            return public_path($this->new_url);
+        }
+
+
 
         //return URL::to($this->new_url);
     }
