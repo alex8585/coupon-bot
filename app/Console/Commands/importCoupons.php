@@ -37,7 +37,7 @@ class importCoupons extends Command
     public function __construct()
     {
         parent::__construct();
-        Image::configure(array('driver' => 'imagick'));
+        //Image::configure(array('driver' => 'imagick'));
         $this->logosArr = $this->getLogos();
         $this->logosPath = storage_path('app/public/logo/');
     }
@@ -71,7 +71,6 @@ class importCoupons extends Command
         $shops = config('settings.shops');
         $updatedIds = [];
         foreach ($cats  as $cat) {
-            dump($cat);
             Source::updateOrCreate(
                 ['title' => $cat['name'], 'type' => 'category'],
                 ['url' => $cat['url']]
@@ -84,7 +83,6 @@ class importCoupons extends Command
 
 
         foreach ($shops  as $shop) {
-            dump($shop);
             $client = new Client();
             $crawler = $client->request('GET', $shop['url']);
 
@@ -121,34 +119,15 @@ class importCoupons extends Command
         if (isset($this->logosArr[$oldUrl])) {
             return $this->logosArr[$oldUrl];
         }
+
         $pathParts = pathinfo($oldUrl);
-
         $fileName = time() . "_" . $pathParts['filename'] . '.' . $pathParts['extension'];
-
-
-        // if ($pathParts['extension'] == 'svg') {
-        //     $fileName = time() . "_" . $pathParts['filename'] . '.jpg';
-        //     $path = storage_path('app/public/logo/') . $fileName;
-
-        //     $contents = file_get_contents($oldUrl);
-        //     file_put_contents($path, $contents);
-        //     dd('1');
-
-
-        //     //$img = Image::make($contents);
-        //     //dump('2');
-        //     //$img->save($path);
-        // } else {
 
         $path = $this->logosPath . $fileName;
         $contents = file_get_contents($oldUrl);
         file_put_contents($path, $contents);
-        // }
-
 
         $newUrl = "/storage/logo/{$fileName}";
-
-
         $logo = new Logo;
         $logo->old_url = $oldUrl;
         $logo->new_url = $newUrl;
@@ -159,7 +138,6 @@ class importCoupons extends Command
         return $logo->id;
     }
 
-
     /**
      * Execute the console command.
      *
@@ -167,7 +145,6 @@ class importCoupons extends Command
      */
     public function allImagesSvgToPng()
     {
-
         $files = array_diff(scandir($this->logosPath), array('..', '.'));
         foreach ($files as $file) {
             $pathParts = pathinfo($file);
@@ -178,6 +155,7 @@ class importCoupons extends Command
             $filePath = $this->logosPath . $file;
             $output = shell_exec("inkscape $filePath -e $newFilePath");
             dump([$filePath, $output]);
+            shell_exec("rm -f $filePath");
         }
     }
 
@@ -214,16 +192,11 @@ class importCoupons extends Command
 
         $this->importSorces();
 
-
-
         $client = new Client();
 
         $sources = Source::get();
         foreach ($sources as $source) {
             $crawler = $client->request('GET', $source->url);
-
-
-            dump($source);
 
             $shops = [];
             $crawler->filter('advcampaign')->each(function ($node) use (&$shops) {
@@ -234,30 +207,19 @@ class importCoupons extends Command
                 ];
             });
 
-            $time_start = microtime(true);
             $coupons = [];
             $crawler->filter('coupon')->each(function ($node) use (&$coupons, $shops, $source) {
-                dump($source->id);
-                dump('ok0');
                 $advcampaign_id = $node->filter('advcampaign_id')->text();
                 $old_logo  = $node->filter('logo')->text();
                 $oldGotolink = $node->filter('gotolink')->text('');
-                dump([$oldGotolink, $old_logo]);
-
-                // if ($old_logo == 'https://cdn.admitad.com/campaign/images/2021/4/23/19925-27ff0d53718c50bb.svg') {
-                //     return;
-                // }
-
 
                 $gotolink = $this->convertUrl($oldGotolink);
-                dump('convertUrl');
                 $logo_id = $this->convertImg($old_logo);
-
-                dump('convertImg');
+                dump([$oldGotolink, $old_logo]);
                 if (!$oldGotolink) {
                     return;
                 }
-                dump('ok1');
+
                 $coupons[] = [
                     'shop_name' => $shops[$advcampaign_id]['name'],
                     'shop_site' => $shops[$advcampaign_id]['site'],
@@ -274,13 +236,8 @@ class importCoupons extends Command
                     'logo_id' => $logo_id,
                     'old_logo' => $old_logo,
                 ];
-                dump('ok2');
             });
-            $time_end = microtime(true);
-            $execution_time = ($time_end - $time_start);
-            dump([$source, $execution_time]);
 
-            dump($coupons);
             $updatedIds = [];
             foreach ($coupons as $coupon) {
 
@@ -297,7 +254,7 @@ class importCoupons extends Command
 
         $this->allImagesSvgToPng();
 
-        //dd($coupons);
+        dump('import coupons done!!');
 
         return 0;
     }

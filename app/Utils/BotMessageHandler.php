@@ -127,7 +127,9 @@ class BotMessageHandler
 
         //$shop = Source::where('type', 'shop')->where('id', $params['shop_id'])->first();
         $couponsObj = Coupon::where('type', 'shop')->where('source_id', $params['shop_id'])->with('logo')->paginate($perPage, '*', 'page', $page);
-
+        if (!$couponsObj->first()) {
+            return;
+        }
         $logo = $couponsObj->first()->logo->url;
 
         $couponsCount = $couponsObj->count();
