@@ -191,10 +191,13 @@ class importCoupons extends Command
 
 
         $this->importSorces();
-
+        $time_start = microtime(true);
         $client = new Client();
 
         $sources = Source::get();
+        $sourcesIds = $sources->pluck('id');
+
+
         foreach ($sources as $source) {
             $crawler = $client->request('GET', $source->url);
 
@@ -239,18 +242,32 @@ class importCoupons extends Command
             });
 
             $updatedIds = [];
+            $insertData = [];
             foreach ($coupons as $coupon) {
 
-                Coupon::updateOrCreate(
-                    ['source_id' => $source->id, 'outher_coupon_id' => $coupon['id']],
-                    ['type' => $source->type, 'logo_id' => $coupon['logo_id'], 'advcampaign_id' => $coupon['advcampaign_id'], 'data' => json_encode($coupon)]
-                );
+                // Coupon::updateOrCreate(
+                //     ['source_id' => $source->id, 'outher_coupon_id' => $coupon['id']],
+                //     ['type' => $source->type, 'logo_id' => $coupon['logo_id'], 'advcampaign_id' => $coupon['advcampaign_id'], 'data' => json_encode($coupon)]
+                // );
+                $insertData[] = [
+                    'source_id' => $source->id,
+                    'outher_coupon_id' => $coupon['id'],
+                    'type' => $source->type,
+                    'logo_id' => $coupon['logo_id'],
+                    'advcampaign_id' => $coupon['advcampaign_id'],
+                    'data' => json_encode($coupon)
+                ];
                 $updatedIds[] = $coupon['id'];
             }
-
+            Coupon::upsert($insertData, ['source_id', 'outher_coupon_id'], ['data']);
             Coupon::where('source_id', $source->id)->whereNotIn('outher_coupon_id', $updatedIds)->delete();
         }
 
+        Coupon::whereNotIn('source_id', $sourcesIds)->delete();
+
+        $time_end = microtime(true);
+        $execution_time = ($time_end - $time_start);
+        dump($execution_time);
 
         $this->allImagesSvgToPng();
 
