@@ -21,7 +21,7 @@ class Paginator
         return $keybord;
     }
 
-    public function getKeybord($paginator, $params, $filterName = '', $filterShopId = null)
+    public function getKeybord($paginator, $params, $filterName = '', $filterShopId = null, $withFilter = true)
     {
         $callback_data = $params;
         $filter = $params;
@@ -30,21 +30,26 @@ class Paginator
 
         $menu = $callback_data;
         $menu['action'] = 'menuBack';
+        $categoriesCallback['action'] = 'categoriesMenu';
 
-
-
+        $i = 0;
         $inlineLayout = [];
         $pages = $this->getPagesArr($paginator);
-        $inlineLayout[0][] = Keyboard::inlineButton(['text' =>  "\xE2\xAC\x86 Главное Меню", 'callback_data' => http_build_query($menu)]);
-        $inlineLayout[1][] = Keyboard::inlineButton(['text' =>  $filterName, 'callback_data' => http_build_query($filter)]);
+        $inlineLayout[$i++][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Меню категорий", 'callback_data' => http_build_query($categoriesCallback)]);
+        $inlineLayout[$i++][] = Keyboard::inlineButton(['text' =>  "\xE2\xAC\x86 Главное Меню", 'callback_data' => http_build_query($menu)]);
+
+        if ($withFilter) {
+            $inlineLayout[$i++][] = Keyboard::inlineButton(['text' =>  $filterName, 'callback_data' => http_build_query($filter)]);
+        }
+
 
         if ($pages['prev']) {
             $callback_data['page'] = $pages['prev'];
-            $inlineLayout[2][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Туда", 'callback_data' => http_build_query($callback_data)]);
+            $inlineLayout[$i][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Туда", 'callback_data' => http_build_query($callback_data)]);
         }
         if ($pages['next']) {
             $callback_data['page'] = $pages['next'];
-            $inlineLayout[2][] = Keyboard::inlineButton(['text' => "Сюда \xE2\x9E\xA1", 'callback_data' => http_build_query($callback_data)]);
+            $inlineLayout[$i][] = Keyboard::inlineButton(['text' => "Сюда \xE2\x9E\xA1", 'callback_data' => http_build_query($callback_data)]);
         }
 
         $keyboard = Keyboard::make([

@@ -4,13 +4,16 @@ namespace App\Console\Commands;
 
 use Goutte\Client;
 use App\Models\Logo;
+use App\Models\Shop;
 use App\Models\Coupon;
 use App\Models\Source;
+use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
+// use Illuminate\Support\Facades\URL;
+// use Illuminate\Support\Facades\Http;
+// use Illuminate\Support\Facades\Storage;
 //use Intervention\Image\ImageManagerStatic as Image;
+use Carbon\Exceptions\InvalidFormatException;
 
 class importCoupons extends Command
 {
@@ -40,6 +43,7 @@ class importCoupons extends Command
         //Image::configure(array('driver' => 'imagick'));
         $this->logosArr = $this->getLogos();
         $this->logosPath = storage_path('app/public/logo/');
+        $this->shops = [];
     }
 
 
@@ -159,9 +163,30 @@ class importCoupons extends Command
         }
     }
 
+    public function getDbShops()
+    {
+        $shops = Shop::all()->pluck('advcampaign_id', 'id');
+        return $shops;
+    }
+
+    public function getShopId($advcampaign_id, $shopArr)
+    {
+        if (isset($this->shops[$advcampaign_id])) {
+            return $this->shops[$advcampaign_id];
+        }
+
+        $shop = Shop::firstOrCreate(
+            ['advcampaign_id' => $advcampaign_id],
+            ['name' => $shopArr['name']]
+        );
+
+        $this->shops[$advcampaign_id] = $shop->id;
+        return $shop->id;
+    }
+
+
     public function handle()
     {
-
         // <name>Скидка 1000р при заказе от 5000р</name>
         // <advcampaign_id>22298</advcampaign_id>
         // <rating>1.39</rating>
@@ -191,6 +216,9 @@ class importCoupons extends Command
 
 
         $this->importSorces();
+
+        $this->shops = $this->getDbShops();
+
         $time_start = microtime(true);
         $client = new Client();
 
@@ -223,13 +251,35 @@ class importCoupons extends Command
                     return;
                 }
 
+                $shop_id = $this->getShopId($advcampaign_id, $shops[$advcampaign_id]);
+
+                $date_start = $node->filter('date_start')->text('');
+
+
+                $date_end = $node->filter('date_end')->text('');
+
+
+                try {
+                    $date_start = Carbon::parse($date_start);
+                } catch (InvalidFormatException  $e) {
+                    $date_start = now();
+                }
+
+                try {
+                    $date_end = Carbon::parse($date_end);
+                } catch (InvalidFormatException  $e) {
+                    $date_end = null;
+                }
+
+
                 $coupons[] = [
+                    'shop_id' => $shop_id,
                     'shop_name' => $shops[$advcampaign_id]['name'],
                     'shop_site' => $shops[$advcampaign_id]['site'],
                     'id' => $node->attr('id'),
                     'name' => $node->filter('name')->text(),
-                    'date_start' => $node->filter('date_start')->text(''),
-                    'date_end' => $node->filter('date_end')->text(''),
+                    'date_start' =>  $date_start,
+                    'date_end' =>  $date_end,
                     'promocode' => $node->filter('promocode')->text(''),
                     'oldGotolink' => $oldGotolink,
                     'gotolink' => $gotolink,
@@ -240,7 +290,7 @@ class importCoupons extends Command
                     'old_logo' => $old_logo,
                 ];
             });
-
+            $now = now();
             $updatedIds = [];
             $insertData = [];
             foreach ($coupons as $coupon) {
@@ -254,11 +304,15 @@ class importCoupons extends Command
                     'outher_coupon_id' => $coupon['id'],
                     'type' => $source->type,
                     'logo_id' => $coupon['logo_id'],
+                    'shop_id' => $coupon['shop_id'],
+                    'date_start' =>   $coupon['date_start'],
+                    'date_end' =>  $coupon['date_end'],
                     'advcampaign_id' => $coupon['advcampaign_id'],
                     'data' => json_encode($coupon)
                 ];
                 $updatedIds[] = $coupon['id'];
             }
+
             Coupon::upsert($insertData, ['source_id', 'outher_coupon_id'], ['data']);
             Coupon::where('source_id', $source->id)->whereNotIn('outher_coupon_id', $updatedIds)->delete();
         }

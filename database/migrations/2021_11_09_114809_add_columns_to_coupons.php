@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddIndexes extends Migration
+class AddColumnsToCoupons extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,11 @@ class AddIndexes extends Migration
      */
     public function up()
     {
-
         Schema::table('coupons', function (Blueprint $table) {
-            $table->unique(['source_id', 'outher_coupon_id']);
+            $table->timestamp('date_start')->nullable();
+            $table->timestamp('date_end')->nullable();
+            $table->integer('shop_id')->index();
         });
-       
     }
 
     /**
@@ -28,8 +28,9 @@ class AddIndexes extends Migration
     public function down()
     {
         Schema::table('coupons', function (Blueprint $table) {
-            $table->dropUnique(['source_id', 'outher_coupon_id']);
+            $table->dropColumn('date_start');
+            $table->dropColumn('date_end');
+            $table->dropColumn('shop_id');
         });
-        
     }
 }

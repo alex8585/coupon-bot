@@ -62,8 +62,20 @@ class UpdatesHandler
             case 'shopsMenu':
                 $this->msgHandler->shopsMenu($chatid);
                 break;
-            case 'categoryPage':
-                $this->msgHandler->categoryPage($chatid, $params);
+            case 'inCategoryMenu':
+                $this->msgHandler->inCategoryMenu($chatid, $params);
+                break;
+            case 'allCoupons':
+                $this->msgHandler->allCoupons($chatid, $params);
+                break;
+            case 'expiringCoupons':
+                $this->msgHandler->expiringCoupons($chatid, $params);
+                break;
+            case 'byCatAndShopMeny':
+                $this->msgHandler->byCatAndShopMeny($chatid, $params);
+                break;
+            case 'catShopCoupons':
+                $this->msgHandler->catShopCoupons($chatid, $params);
                 break;
             case 'shopPage':
                 $this->msgHandler->shopPage($chatid, $params);
