@@ -16,8 +16,7 @@ class UsersController extends Controller
         $perPage =  request('perPage', 5);
 
         return Inertia::render('Users/Index', [
-
-            'items' => TgUser::paginate($perPage)->withQueryString(),
+            'items' => TgUser::sort($sort, $direction)->paginate($perPage)->withQueryString(),
         ]);
     }
 }

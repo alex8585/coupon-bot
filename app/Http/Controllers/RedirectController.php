@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Activity;
+
+use App\Utils\UserSession;
 use App\Utils\UrlConverter;
-use Illuminate\Http\Request;
 
 class RedirectController extends Controller
 {
-    public function sale(UrlConverter $urlConverter)
+    public function sale(UrlConverter $urlConverter, UserSession  $userSession)
     {
         $url = request('u');
         if (!$url) {
@@ -24,20 +24,18 @@ class RedirectController extends Controller
 
         $newUrl = str_replace("&inner_user_id=$userId", "", $newUrl);
 
-        $this->saveUrlActivity($userId, $newUrl);
 
-
-        return redirect($newUrl);
-    }
-
-    private function saveUrlActivity($userId, $newUrl)
-    {
-        $activity = Activity::create([
+        $activity = [
             'type' => 'url',
             'tguser_id' => $userId,
             'data' => json_encode([
                 'url' => $newUrl,
             ])
-        ]);
+        ];
+
+
+        $userSession->saveActivity($activity);
+
+        return redirect($newUrl);
     }
 }

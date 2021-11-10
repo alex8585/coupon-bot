@@ -15,7 +15,7 @@ class ActivitiesController extends Controller
         $perPage =  request('perPage', 5);
 
         return Inertia::render('Activities/Index', [
-            'items' => Activity::with('user')->paginate($perPage)->withQueryString(),
+            'items' => Activity::with('user')->sort($sort, $direction)->paginate($perPage)->withQueryString(),
         ]);
     }
 }

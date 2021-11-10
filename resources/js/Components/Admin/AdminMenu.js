@@ -22,6 +22,17 @@ const useStyles = makeStyles((theme) => ({
     color: "#fff",
     textDecoration: "none",
   },
+  imgwrap: {
+    textAlign:"left",
+    margin:"0 auto",
+    fontWeight: "900",
+    fontSize: "22px",
+    lineHeight: "43px",
+    color: " #1976d2",
+    paddingLeft:"7px",
+    textTransform: "uppercase",
+    width:"100%",
+  }
 }))
 
 const drawerWidth = 240
@@ -120,11 +131,12 @@ function AdminMenu({ title = "Dashboard" }) {
             px: [1],
           }}
         >
+           <div className={classes.imgwrap}>  <a href="/admin">Coupon admin </a></div> 
           <IconButton onClick={toggleDrawer}>
             <ChevronLeftIcon />
           </IconButton>
         </Toolbar>
-
+            
         <LeftMenu />
       </Drawer>
     </>

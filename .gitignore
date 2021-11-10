@@ -18,3 +18,4 @@ routes/web.php
 backup
 1.php
 config/settings.php
+cron-log.txt

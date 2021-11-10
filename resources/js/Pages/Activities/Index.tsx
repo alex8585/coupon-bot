@@ -6,13 +6,13 @@ import TableContainer from "@material-ui/core/TableContainer"
 import TablePagination from "@material-ui/core/TablePagination"
 import TableRow from "@material-ui/core/TableRow"
 import Paper from "@material-ui/core/Paper"
-import Alert from "@material-ui/core/Alert"
+//import Alert from "@material-ui/core/Alert"
 
 
 import AdminLayout from "@l/AdminLayout"
 import React, { useState, useEffect, ChangeEvent, MouseEvent } from "react"
 import { makeStyles } from "@material-ui/styles"
-import moment from "moment"
+//import moment from "moment"
 
 import AdminTableHead from "@c/Admin/AdminTableHead"
 import { usePage } from "@inertiajs/inertia-react"
@@ -33,13 +33,13 @@ const useStyles = makeStyles((theme) => ({
 const headCells = [
   {
     id: "username",
-    sortable: true,
+    sortable: false,
     label: "User name",
   },
   {
-    id: "Time",
+    id: "created_at",
     sortable: true,
-    label: "Created at",
+    label: "Time",
   },
   {
     id: "type",
@@ -48,7 +48,7 @@ const headCells = [
   },
   {
     id: "data",
-    sortable: true,
+    sortable: false,
     label: "Data",
   },
   
@@ -117,6 +117,7 @@ const Activities = () => {
     setItemsQuery({
       ...itemsQuery,
       perPage,
+      page:1
     })
   }
 
@@ -158,7 +159,7 @@ const Activities = () => {
             </Table>
           </TableContainer>
           <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
+            rowsPerPageOptions={[5, 10, 25, 100, 500]}
             component="div"
             count={total}
             rowsPerPage={perPage}

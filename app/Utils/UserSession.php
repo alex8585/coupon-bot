@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Cache;
 class UserSession
 {
 
+    protected $keysArrKey;
+    public function __construct()
+    {
+        $this->keysArrKey = 'user_activity_keys_arr';
+    }
     public function getUserFromUpdate($update)
     {
         $msg = [];
@@ -78,5 +83,38 @@ class UserSession
     public function getDbUserByTgUser($tgUser)
     {
         return $this->fromCache($tgUser);
+    }
+
+
+    public function saveActivity($activity)
+    {
+        $id = $activity['tguser_id'];
+        $key = 'user_activity_' . $id;
+        $activitiesArr = Cache::get($key, []);
+
+        $time = now()->timestamp;
+        $activity['created_at'] =  $time;
+        $activity['updated_at'] =  $time;
+        $activitiesArr[$time] = $activity;
+        Cache::forever($key, $activitiesArr);
+
+
+
+        $activitiesKeys = Cache::get($this->keysArrKey, []);
+        if (!isset($activitiesKeys[$key])) {
+            $activitiesKeys[$key] = $key;
+            Cache::forever($this->keysArrKey, $activitiesKeys);
+        }
+    }
+
+    public function getCacheAactivities()
+    {
+        $activities = [];
+        $activitiesKeys = Cache::pull($this->keysArrKey, []);
+        foreach ($activitiesKeys as $key) {
+            $userActivities = Cache::pull($key, []);
+            $activities[$key] = $userActivities;
+        }
+        return $activities;
     }
 }

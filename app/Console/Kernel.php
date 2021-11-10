@@ -24,7 +24,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('import_coupons')->cron('* */2 * * *');
+        $schedule->command('save_activities')->runInBackground()->withoutOverlapping()->everyMinute();
+        $schedule->command('import_coupons')->runInBackground()->withoutOverlapping()->daily();
     }
 
     /**

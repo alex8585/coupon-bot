@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\TgUser;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Activity extends Model

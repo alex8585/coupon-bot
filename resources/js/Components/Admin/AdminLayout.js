@@ -22,6 +22,7 @@ function AdminLayout({ children, title }) {
     <Box sx={{ display: "flex" }}>
       <Head>{/* <link rel="favicon icon" href="favicon.ico" /> */}</Head>
       <AdminMenu title={title} />
+     
       <Box
         component="main"
         sx={{
