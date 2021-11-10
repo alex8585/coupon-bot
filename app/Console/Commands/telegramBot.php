@@ -2,11 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+//use App\Utils\UserSession;
 
+use App\Utils\UpdatesHandler;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Telegram\Bot\Laravel\Facades\Telegram;
-use App\Utils\UpdatesHandler;
 
 class telegramBot extends Command
 {
@@ -18,6 +19,7 @@ class telegramBot extends Command
     {
         parent::__construct();
         $this->updatesHandler = new UpdatesHandler();
+        //$this->userSession = new UserSession();
     }
 
 
@@ -32,6 +34,7 @@ class telegramBot extends Command
                     //dump($update);
                     Cache::set('telegram_update_id', $this->lastId);
 
+                    //$this->userSession->setUser($update);
                     if (isset($update['callback_query'])) {
                         $this->updatesHandler->callbackQuery($update['callback_query']);
                     } else if (isset($update['message'])) {

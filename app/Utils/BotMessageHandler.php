@@ -7,8 +7,9 @@ use App\Models\Shop;
 use App\Models\Coupon;
 use App\Models\Source;
 use App\Utils\Paginator;
-use App\Utils\rlConverter;
+#use App\Utils\UrlConverter;
 use Illuminate\Support\Str;
+
 
 class BotMessageHandler
 {
@@ -19,11 +20,12 @@ class BotMessageHandler
     // <pre>pre-formatted fixed-width code block</pre>";
 
 
-    public  function __construct()
+    public  function __construct($user = null)
     {
         $this->bot = new Bot();
         $this->paginator = new Paginator();
         $this->url = new UrlConverter();
+        $this->user = $user;
     }
 
 
@@ -57,7 +59,7 @@ class BotMessageHandler
                 $date_end = isset($couponArr['date_end']) ? $couponArr['date_end'] : 'None';
 
                 //$gotolink = !empty($coupon['gotolink']) ? $coupon['gotolink'] : $coupon['oldGotolink'];
-                $gotolink = $this->url->getInnerUrl($coupon['oldGotolink']);
+                $gotolink = $this->url->getInnerUrl($coupon['oldGotolink'],  $this->user->id);
                 $html .= "<b>{$coupon['name']}</b>" . PHP_EOL;;
                 $html .= "<pre>Срок действия: {$date_start} - {$date_end}</pre>" . PHP_EOL;
                 $html .= "<pre>Промокод: {$coupon['promocode']}</pre>" . PHP_EOL;
@@ -127,7 +129,7 @@ class BotMessageHandler
                 foreach ($chunk as $couponNum => $coupon) {
                     $data = $coupon['data'];
                     $description = Str::limit($data['description'],  $descriptionLimit,  '...');
-                    $gotolink = $this->url->getInnerUrl($data['oldGotolink']);
+                    $gotolink = $this->url->getInnerUrl($data['oldGotolink'], $this->user->id);
 
 
                     $date_start = isset($coupon['date_start']) ? $coupon['date_start'] : '';

@@ -6,7 +6,7 @@ use App\Utils\Bot;
 use Telegram\Bot\Actions;
 use App\Utils\BotMessageHandler;
 use Telegram\Bot\Laravel\Facades\Telegram;
-
+use App\Utils\UserSession;
 
 
 
@@ -16,15 +16,18 @@ class UpdatesHandler
     public function __construct()
     {
         $this->bot = new Bot();
-        $this->msgHandler = new BotMessageHandler();
+
+        $this->userSession = new UserSession();
     }
 
     public function commandRespond($msg)
     {
 
         $chatid = $msg['chat']['id'];
+        //$userid = $msg['from']['id'];
         $msgText = isset($msg['text']) ? $msg['text'] : null;
         Telegram::sendChatAction(['action' => Actions::TYPING, 'chat_id' => $chatid]);
+        $this->msgHandler = new BotMessageHandler();
 
         if (!$msgText) {
             $this->msgHandler->mainMenu($chatid);
@@ -43,8 +46,11 @@ class UpdatesHandler
     public function callbackQuery($msg)
     {
         $chatid = $msg['message']['chat']['id'];
+        //$userid = $msg['from']['id'];
         $data = $msg['data'];
 
+        $user = $this->userSession->getDbUserByTgUser($msg['from']);
+        $this->msgHandler = new BotMessageHandler($user);
 
         $params = [];
         if (strpos($data, 'action=') !== false) {

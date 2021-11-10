@@ -2,9 +2,11 @@
 
 namespace App\Utils;
 
+#use App\Utils\UserSession;
+
 class UrlConverter
 {
-    public function getInnerUrl($url)
+    public function getInnerUrl($url, $userId)
     {
 
         if (strpos($url, '?') === false) {
@@ -12,6 +14,9 @@ class UrlConverter
         } else {
             $url .= "&subid=coupon";
         }
+
+        $url .= "&inner_user_id=$userId";
+
 
         $url = urlencode(base64_encode($url));
 
