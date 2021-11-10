@@ -21,7 +21,12 @@ class Paginator
         return $keybord;
     }
 
-    public function getKeybord($paginator, $params, $filterName = '', $filterShopId = null, $withFilter = true)
+    public function getShopKeybord($paginator, $params)
+    {
+        return $this->getKeybord($paginator, $params, '', null, false, true);
+    }
+
+    public function getKeybord($paginator, $params, $filterName = '', $filterShopId = null, $withFilter = true, $isShop = false)
     {
         $callback_data = $params;
         $filter = $params;
@@ -30,12 +35,20 @@ class Paginator
 
         $menu = $callback_data;
         $menu['action'] = 'menuBack';
-        $categoriesCallback['action'] = 'categoriesMenu';
 
         $i = 0;
         $inlineLayout = [];
         $pages = $this->getPagesArr($paginator);
-        $inlineLayout[$i++][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Меню категорий", 'callback_data' => http_build_query($categoriesCallback)]);
+        if ($isShop) {
+            $shopsCallback['action'] = 'shopsMenu';
+            $inlineLayout[$i++][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Меню магазинов", 'callback_data' => http_build_query($shopsCallback)]);
+        } else {
+            $categoriesCallback['action'] = 'categoriesMenu';
+
+            $inlineLayout[$i++][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Меню категорий", 'callback_data' => http_build_query($categoriesCallback)]);
+        }
+
+
         $inlineLayout[$i++][] = Keyboard::inlineButton(['text' =>  "\xE2\xAC\x86 Главное Меню", 'callback_data' => http_build_query($menu)]);
 
         if ($withFilter) {
@@ -43,13 +56,13 @@ class Paginator
         }
 
 
-        if ($pages['prev']) {
-            $callback_data['page'] = $pages['prev'];
-            $inlineLayout[$i][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Туда", 'callback_data' => http_build_query($callback_data)]);
-        }
+        // if ($pages['prev']) {
+        //     $callback_data['page'] = $pages['prev'];
+        //     $inlineLayout[$i][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Назад", 'callback_data' => http_build_query($callback_data)]);
+        // }
         if ($pages['next']) {
             $callback_data['page'] = $pages['next'];
-            $inlineLayout[$i][] = Keyboard::inlineButton(['text' => "Сюда \xE2\x9E\xA1", 'callback_data' => http_build_query($callback_data)]);
+            $inlineLayout[$i][] = Keyboard::inlineButton(['text' => "Смотреть еще \xE2\x9E\xA1", 'callback_data' => http_build_query($callback_data)]);
         }
 
         $keyboard = Keyboard::make([

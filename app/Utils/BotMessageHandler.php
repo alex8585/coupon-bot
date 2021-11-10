@@ -29,14 +29,12 @@ class BotMessageHandler
 
     public function shopPage($chatid,  $params)
     {
-        $perPage = 4;
-        $chunkSize = 2;
+        $perPage = 3;
+        $chunkSize = 1;
         $descriptionLimit = 100;
         $page = isset($params['page']) ? $params['page'] : 1;
 
-
-        //$shop = Source::where('type', 'shop')->where('id', $params['shop_id'])->first();
-        $couponsObj = Coupon::where('type', 'shop')->where('source_id', $params['shop_id'])->with('logo')->paginate($perPage, '*', 'page', $page);
+        $couponsObj = Coupon::sourceShop($params['shop_id'])->paginate($perPage, '*', 'page', $page);
         if (!$couponsObj->first()) {
             return;
         }
@@ -55,12 +53,17 @@ class BotMessageHandler
             foreach ($chunk as $couponNum => $couponArr) {
                 $coupon = json_decode($couponArr['data'], true);
                 $description = Str::limit($coupon['description'],  $descriptionLimit,  '...');
+                $date_start = isset($couponArr['date_start']) ? $couponArr['date_start'] : '';
+                $date_end = isset($couponArr['date_end']) ? $couponArr['date_end'] : 'None';
+
                 //$gotolink = !empty($coupon['gotolink']) ? $coupon['gotolink'] : $coupon['oldGotolink'];
                 $gotolink = $this->url->getInnerUrl($coupon['oldGotolink']);
                 $html .= "<b>{$coupon['name']}</b>" . PHP_EOL;;
-                $html .= "<pre>Срок действия: {$coupon['date_start']} - {$coupon['date_end']}</pre>" . PHP_EOL;;
+                $html .= "<pre>Срок действия: {$date_start} - {$date_end}</pre>" . PHP_EOL;
                 $html .= "<pre>Промокод: {$coupon['promocode']}</pre>" . PHP_EOL;
-                $html .= "<a href='{$gotolink}'>ПОЛУЧИТЬ КУПОН</a>" . PHP_EOL;
+                $html .= "=======================" . PHP_EOL;
+                $html .= " \xE2\x9D\x97<a href='{$gotolink}'>ПРИМЕНИТЬ КУПОН</a>\xE2\x9D\x97" . PHP_EOL;
+                $html .= "=======================" . PHP_EOL;
                 $html .= "<pre>{$description}</pre>";
                 $cnt++;
             }
@@ -70,8 +73,7 @@ class BotMessageHandler
                     'action' => 'shopPage',
                     'shop_id' => $params['shop_id'],
                 ];
-                $keyboardArr = $this->paginator->getKeybord($couponsObj, $keybordParams);
-
+                $keyboardArr = $this->paginator->getShopKeybord($couponsObj, $keybordParams);
 
                 $this->bot->sendPhoto($chatid, $logo, $html, $keyboardArr);
             } else {
@@ -112,7 +114,7 @@ class BotMessageHandler
             $elem['logo'] = $couponObj->logo->url;
             $coupons[$couponObj->advcampaign_id][] = $elem;
         }
-        dump($coupons);
+
         $cnt = 0;
         foreach ($coupons as  $shopCouponsAll) {
             $shopCoupons = array_chunk($shopCouponsAll, $chunkSize);
@@ -136,7 +138,9 @@ class BotMessageHandler
                     $html .= "<b>{$data['name']}</b>" . PHP_EOL;
                     $html .= "<pre>Срок действия: {$date_start} - {$date_end}</pre>" . PHP_EOL;
                     $html .= "<pre>Промокод: {$data['promocode']}</pre>" . PHP_EOL;
-                    $html .= "<a href='{$gotolink}'>ПОЛУЧИТЬ КУПОН</a>" . PHP_EOL;
+                    $html .= "=======================" . PHP_EOL;
+                    $html .= " \xE2\x9D\x97<a href='{$gotolink}'>ПРИМЕНИТЬ КУПОН</a>\xE2\x9D\x97" . PHP_EOL;
+                    $html .= "=======================" . PHP_EOL;
                     $html .= "<pre>{$description}</pre>" . PHP_EOL;
                     $cnt++;
                 }
@@ -242,11 +246,11 @@ class BotMessageHandler
         $byShop['action'] = 'byCatAndShopMeny';
 
         $keyboard = [
-            ['text' => 'ВСЕ КУПОНЫ', 'callback_data' => http_build_query($all)],
-            ['text' => 'ВЫБРАТЬ МАГАЗИН', 'callback_data' => http_build_query($byShop)],
+            ['text' => "\xF0\x9F\x98\x83 ВСЕ КУПОНЫ", 'callback_data' => http_build_query($all)],
+            ['text' => "🛍 ВЫБРАТЬ МАГАЗИН", 'callback_data' => http_build_query($byShop)],
         ];
         if ($count) {
-            $keyboard[] = ['text' => 'ИСТЕКАЮТ СЕГОДНЯ', 'callback_data' => http_build_query($expiring)];
+            $keyboard[] = ['text' => "\xE2\x99\xA8 ИСТЕКАЮТ СЕГОДНЯ", 'callback_data' => http_build_query($expiring)];
         }
         return $keyboard;
     }

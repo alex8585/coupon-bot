@@ -19,6 +19,16 @@ class Coupon extends Model
         return $this->belongsTo(Logo::class, 'logo_id');
     }
 
+    public function scopeSourceShop($query, $shop_id)
+    {
+        return $query->where('type', 'shop')->where('source_id', $shop_id)
+            ->where(function ($query) {
+                $query->where('date_end', '>', now());
+                $query->orWhere('date_end', null);
+            })
+            ->with('logo')->orderBy('date_start', 'DESC');
+    }
+
     public function scopeCategory($query, $category_id)
     {
         return $query->where('type', 'category')
