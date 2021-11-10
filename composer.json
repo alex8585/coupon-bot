@@ -15,7 +15,7 @@
         "laravel/framework": "^8.54",
         "laravel/sanctum": "^2.6",
         "laravel/tinker": "^2.5",
-        "tightenco/ziggy": "^1.0"
+        "tightenco/ziggy": "^1.4"
     },
     "require-dev": {
         "facade/ignition": "^2.5",
