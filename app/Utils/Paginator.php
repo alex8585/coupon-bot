@@ -33,8 +33,7 @@ class Paginator
         $filter['shop_id'] = $filterShopId;
 
 
-        $menu = $callback_data;
-        $menu['action'] = 'menuBack';
+
 
         $i = 0;
         $inlineLayout = [];
@@ -48,7 +47,8 @@ class Paginator
             $inlineLayout[$i++][] = Keyboard::inlineButton(['text' => "\xE2\xAC\x85 Меню категорий", 'callback_data' => http_build_query($categoriesCallback)]);
         }
 
-
+        $menu = [];
+        $menu['action'] = 'menuBack';
         $inlineLayout[$i++][] = Keyboard::inlineButton(['text' =>  "\xE2\xAC\x86 Главное Меню", 'callback_data' => http_build_query($menu)]);
 
         if ($withFilter) {

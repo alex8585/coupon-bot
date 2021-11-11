@@ -38,6 +38,16 @@ class saveActivities extends Command
      *
      * @return int
      */
+    private $fields = [
+        'coupon_id',
+        'action',
+        'shop_id',
+        'category_id',
+        'is_id',
+        'page',
+    ];
+
+
     public function handle(UserSession  $userSession)
     {
         $insertData = [];
@@ -46,9 +56,17 @@ class saveActivities extends Command
             foreach ($activities as $activity) {
                 $activity['created_at'] = Carbon::parse($activity['created_at']);
                 $activity['updated_at'] = Carbon::parse($activity['updated_at']);
+                foreach ($this->fields as $k => $field) {
+                    if (!isset($activity[$field])) {
+                        $activity[$field] = null;
+                    }
+                }
+
+
                 $insertData[] = $activity;
             }
         }
+        dump($insertData);
         Activity::insert($insertData);
     }
 }

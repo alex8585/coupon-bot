@@ -6,6 +6,22 @@ interface TagInterface {
     created_at?: string
 }
 
+type ActivitiesKeysType = | 'inner' | 'url';
+interface ActivityType {
+    page?: string,
+    category?: any,
+    title?: string,
+    cats_shop?: any,
+    action?: string,
+    shop?: any,
+    type?: ActivitiesKeysType,
+    created_at?: string,
+    id?: string,
+    coupon?: any,
+    user?: any,
+}
+//type ActivityType = 'inner' | 'url' | '';
+
 
 interface UserInterface {
     id?: number,

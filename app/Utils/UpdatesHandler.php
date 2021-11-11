@@ -46,7 +46,7 @@ class UpdatesHandler
     public function callbackQuery($msg)
     {
         $chatid = $msg['message']['chat']['id'];
-        //$userid = $msg['from']['id'];
+        $userid = $msg['from']['id'];
         $data = $msg['data'];
 
         $user = $this->userSession->getDbUserByTgUser($msg['from']);
@@ -60,6 +60,11 @@ class UpdatesHandler
         $action = isset($params['action']) ? $params['action'] : null;
         dump($data);
         dump($params);
+        $activity = $params;
+        $activity['tguser_id'] = $user['id'];
+        $activity['type'] = 'inner';
+        $this->userSession->saveActivity($activity);
+
         Telegram::sendChatAction(['action' => Actions::TYPING, 'chat_id' => $chatid]);
         switch ($action) {
             case 'categoriesMenu':

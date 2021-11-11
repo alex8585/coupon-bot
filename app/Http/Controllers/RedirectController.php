@@ -17,24 +17,20 @@ class RedirectController extends Controller
 
         $newUrl = $urlConverter->getOuterUrl($url);
 
-        $urlArr = parse_url($newUrl);
-        $query =  $urlArr['query'];
-        parse_str($query, $queryArr);
-        $userId = $queryArr['inner_user_id'];
-
-        $newUrl = str_replace("&inner_user_id=$userId", "", $newUrl);
-
+        $userId = $urlConverter->getParamFromUrl($newUrl, 'inner_user_id');
+        $couponId = $urlConverter->getParamFromUrl($newUrl, 'inner_coupon_id');
 
         $activity = [
             'type' => 'url',
             'tguser_id' => $userId,
-            'data' => json_encode([
-                'url' => $newUrl,
-            ])
+            'coupon_id' =>  $couponId,
         ];
-
-
         $userSession->saveActivity($activity);
+
+
+        $newUrl = str_replace("&inner_user_id=$userId", "", $newUrl);
+        $newUrl = str_replace("&inner_coupon_id=$couponId", "", $newUrl);
+        //dd([$newUrl, $userId, $couponId]);
 
         return redirect($newUrl);
     }

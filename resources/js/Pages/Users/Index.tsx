@@ -5,19 +5,20 @@ import TableCell from "@material-ui/core/TableCell"
 import TableContainer from "@material-ui/core/TableContainer"
 import TablePagination from "@material-ui/core/TablePagination"
 import TableRow from "@material-ui/core/TableRow"
+import Link from "@material-ui/core/Link"
 import Paper from "@material-ui/core/Paper"
 //import Alert from "@material-ui/core/Alert"
 
-
+//import NavLink from "../../Components/Auth/NavLink"
 import AdminLayout from "@l/AdminLayout"
 import React, { useState, useEffect, ChangeEvent, MouseEvent } from "react"
 import { makeStyles } from "@material-ui/styles"
 //import moment from "moment"
 
 import AdminTableHead from "@c/Admin/AdminTableHead"
-import { usePage } from "@inertiajs/inertia-react"
+import { InertiaLink, usePage } from "@inertiajs/inertia-react"
 import { Inertia } from "@inertiajs/inertia"
-
+import Button from "@material-ui/core/Button"
 
 const useStyles = makeStyles((theme) => ({
   topBtnsWrapp: {
@@ -56,6 +57,11 @@ const headCells = [
     sortable: true,
     label: "Created at",
   },
+  {
+    id: "actions",
+    sortable: false,
+    label: "Actions",
+  },
   
 ]
 
@@ -77,12 +83,10 @@ const Users = () => {
   let { page, perPage, direction, sort } = itemsQuery
 
   useEffect(() => {
-    if(JSON.stringify(initialItemsQuery) !== JSON.stringify(itemsQuery)  ) {
       Inertia.get(usersUrl, itemsQuery, {
         replace: true,
         preserveState: true,
       })
-    }
   }, [itemsQuery])
 
   const classes = useStyles()
@@ -154,6 +158,24 @@ const Users = () => {
                       <TableCell> {row.last_name}</TableCell>
                       <TableCell> {row.username}</TableCell>
                       <TableCell align="left">{row.created_at}</TableCell>
+                      <TableCell className={classes.actionButton}>
+                        <Button
+                          variant="contained"
+                          href={route("activities",{'aaa':'3'})}
+                        >
+                          Activities
+                        </Button>
+                       
+                        {/* <InertiaLink
+                          className="MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButtonBase-root css-sghohy-MuiButtonBase-root-MuiButton-root"
+                          as="button"
+                          method="post"
+                          href={route("activities")}
+                         
+                        >
+                          View activities
+                        </InertiaLink> */}
+                      </TableCell>
                     </TableRow>
                   )
                 })}

@@ -6,7 +6,7 @@ namespace App\Utils;
 
 class UrlConverter
 {
-    public function getInnerUrl($url, $userId)
+    public function getInnerUrl($url, $userId, $couponId)
     {
 
         if (strpos($url, '?') === false) {
@@ -16,7 +16,7 @@ class UrlConverter
         }
 
         $url .= "&inner_user_id=$userId";
-
+        $url .= "&inner_coupon_id=$couponId";
 
         $url = urlencode(base64_encode($url));
 
@@ -32,5 +32,15 @@ class UrlConverter
     {
         $url = base64_decode(urldecode($url));
         return  $url;
+    }
+
+
+    public function getParamFromUrl($url, $key)
+    {
+        $urlArr = parse_url($url);
+        $query =  $urlArr['query'];
+        parse_str($query, $queryArr);
+        $result = isset($queryArr[$key]) ? $queryArr[$key] : null;
+        return $result;
     }
 }

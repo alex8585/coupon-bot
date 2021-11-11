@@ -64,21 +64,19 @@ const Activities = () => {
 
   const initialItemsQuery = {
     page: 1,
-    perPage: 5,
-    direction: "desc",
-    sort: "id",
+    perPage: 25,
+    direction: "asc",
+    sort: "created_at",
   }
   const [itemsQuery, setItemsQuery] = useState(initialItemsQuery)
 
   let { page, perPage, direction, sort } = itemsQuery
 
   useEffect(() => {
-    if(JSON.stringify(initialItemsQuery) !== JSON.stringify(itemsQuery)  ) {
       Inertia.get(usersUrl, itemsQuery, {
         replace: true,
         preserveState: true,
       })
-    }
   }, [itemsQuery])
 
   const classes = useStyles()
@@ -121,7 +119,24 @@ const Activities = () => {
     })
   }
 
+  const action:{ [key: string]: string} = {
+    'categoriesMenu': "Меню категорий",
+    'allCoupons': "Все купоны",
+    'inCategoryMenu': "В Категории",
+    'menuBack': "Главное меню",
+    'catShopCoupons': "Купоны категории по магазину",
+    'byCatAndShopMeny': "Меню фильтр по магазину",
+    "expiringCoupons":"Истекают сегодня",
+    "shopsMenu": "Меню магазинов",
+    "shopPage": "Купоны магазина"
+  }
   
+  let types:{ [key in ActivitiesKeysType]: string} = {
+    'inner':"В боте",
+    'url':"Переход по ссылке",
+  }
+  
+
   return (
     <AdminLayout title="Activities">
       <Box sx={{ width: "100%" }}>
@@ -143,14 +158,32 @@ const Activities = () => {
                 rowCount={items.length}
               />
               <TableBody>
-                {items.slice().map((row: any, index: number) => {
+                {items.slice().map((row: ActivityType, index: number) => {
+                   let couponUrl = row.coupon ? JSON.parse(row.coupon.data).oldGotolink : null 
                   return (
+                  
                     <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
                      
                       <TableCell> {row.user.username}</TableCell>
                       <TableCell align="left">{row.created_at}</TableCell>
-                      <TableCell> {row.type}</TableCell>
-                      <TableCell> {(JSON.parse(row.data)).url}</TableCell>
+                      <TableCell> { row.type && <span>{types[row.type]} </span>}</TableCell>
+
+                      {row.type == 'inner' && (
+                        <TableCell> 
+                          {row.action && action[row.action] && <span> {action[row.action]} </span>} 
+                          {row.action && !action[row.action] && <span> {row.action} </span>}
+                          {row.shop && <span> Магазин: <b>{row.shop.title}</b> </span> }
+                          {row.category && <span> Категория: <b>{row.category.title}</b> </span> }
+                          {row.cats_shop && <span> Магазин:  <b>{row.cats_shop.name}</b> </span> }
+                          {row.page && <span> Страница: {row.page} </span> }
+                        
+                        </TableCell>
+                      )}
+                      {row.type == 'url' && couponUrl && (
+                        <TableCell> 
+                           <a href={couponUrl} target="_blank">{couponUrl} </a>
+                        </TableCell>
+                      )}
                       
                     </TableRow>
                   )

@@ -17,7 +17,15 @@ class CreateActivitiesTable extends Migration
             $table->id();
             $table->integer('tguser_id')->index();
             $table->string('type');
-            $table->json('data')->nullable();
+            //$table->json('data')->nullable();
+            $table->integer('coupon_id')->index()->nullable();
+            $table->string('action')->nullable();
+
+            $table->integer('shop_id')->index()->nullable();
+            $table->integer('category_id')->index()->nullable();
+            $table->integer('is_id')->index()->nullable();
+            $table->integer('page')->nullable();
+
             $table->timestamps();
         });
     }

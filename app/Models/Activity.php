@@ -20,4 +20,23 @@ class Activity extends Model
     {
         return $this->belongsTo(TgUser::class, 'tguser_id');
     }
+
+    public function category()
+    {
+        return $this->belongsTo(Source::class, 'category_id');
+    }
+    public function shop()
+    {
+        return $this->belongsTo(Source::class, 'shop_id');
+    }
+
+    public function catsShop()
+    {
+        return $this->belongsTo(Shop::class, 'is_id');
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class, 'coupon_id');
+    }
 }
