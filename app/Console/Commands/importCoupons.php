@@ -7,12 +7,13 @@ use App\Models\Logo;
 use App\Models\Shop;
 use App\Models\Coupon;
 use App\Models\Source;
+use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
-use Illuminate\Console\Command;
 // use Illuminate\Support\Facades\URL;
 // use Illuminate\Support\Facades\Http;
 // use Illuminate\Support\Facades\Storage;
 //use Intervention\Image\ImageManagerStatic as Image;
+use Illuminate\Console\Command;
 use Carbon\Exceptions\InvalidFormatException;
 
 class importCoupons extends Command
@@ -271,7 +272,7 @@ class importCoupons extends Command
                     $date_end = null;
                 }
 
-
+                $descr = $node->filter('description')->text('');
                 $coupons[] = [
                     'shop_id' => $shop_id,
                     'shop_name' => $shops[$advcampaign_id]['name'],
@@ -285,7 +286,8 @@ class importCoupons extends Command
                     'gotolink' => $gotolink,
                     'advcampaign_id' => $advcampaign_id,
                     'rating' => $node->filter('rating')->text(),
-                    'description' => $node->filter('description')->text(''),
+                    'description' =>  Str::limit($descr,  120),
+
                     'logo_id' => $logo_id,
                     'old_logo' => $old_logo,
                 ];
@@ -313,7 +315,11 @@ class importCoupons extends Command
                 $updatedIds[] = $coupon['id'];
             }
 
-            Coupon::upsert($insertData, ['source_id', 'outher_coupon_id'], ['data']);
+            $chunks = array_chunk($insertData, 50);
+            foreach ($chunks as $data) {
+                Coupon::upsert($data, ['source_id', 'outher_coupon_id'], ['data']);
+            }
+
             Coupon::where('source_id', $source->id)->whereNotIn('outher_coupon_id', $updatedIds)->delete();
         }
 

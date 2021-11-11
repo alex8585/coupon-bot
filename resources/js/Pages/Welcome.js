@@ -30,12 +30,12 @@ export default function Welcome(props) {
               Log in
             </InertiaLink>
 
-            <InertiaLink
+            {/* <InertiaLink
               href={route("register")}
               className="ml-4 text-sm text-gray-700 underline"
             >
               Register
-            </InertiaLink>
+            </InertiaLink> */}
           </>
         )}
       </div>
