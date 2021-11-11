@@ -39,4 +39,12 @@ class Activity extends Model
     {
         return $this->belongsTo(Coupon::class, 'coupon_id');
     }
+
+
+    public function scopeUserFilter($query,  $tguser_id)
+    {
+        $query->when($tguser_id ?? null, function ($query, $tguser_id) {
+            $query->where('tguser_id', $tguser_id);
+        });
+    }
 }

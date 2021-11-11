@@ -11,7 +11,7 @@ import Paper from "@material-ui/core/Paper"
 
 //import NavLink from "../../Components/Auth/NavLink"
 import AdminLayout from "@l/AdminLayout"
-import React, { useState, useEffect, ChangeEvent, MouseEvent } from "react"
+import React, { useState, useEffect, ChangeEvent, MouseEvent ,useRef} from "react"
 import { makeStyles } from "@material-ui/styles"
 //import moment from "moment"
 
@@ -81,8 +81,12 @@ const Users = () => {
   const [itemsQuery, setItemsQuery] = useState(initialItemsQuery)
 
   let { page, perPage, direction, sort } = itemsQuery
-
+  const firstUpdate = useRef(true);
   useEffect(() => {
+    if (firstUpdate.current) {
+      firstUpdate.current = false;
+      return;
+    }
       Inertia.get(usersUrl, itemsQuery, {
         replace: true,
         preserveState: true,
@@ -161,7 +165,7 @@ const Users = () => {
                       <TableCell className={classes.actionButton}>
                         <Button
                           variant="contained"
-                          href={route("activities",{'aaa':'3'})}
+                          href={route("activities",{'tguser_id':row.id})}
                         >
                           Activities
                         </Button>

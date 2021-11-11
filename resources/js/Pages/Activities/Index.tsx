@@ -7,10 +7,10 @@ import TablePagination from "@material-ui/core/TablePagination"
 import TableRow from "@material-ui/core/TableRow"
 import Paper from "@material-ui/core/Paper"
 //import Alert from "@material-ui/core/Alert"
-
+import Button from "@material-ui/core/Button"
 
 import AdminLayout from "@l/AdminLayout"
-import React, { useState, useEffect, ChangeEvent, MouseEvent } from "react"
+import React, { useState, useEffect, ChangeEvent, MouseEvent,useRef } from "react"
 import { makeStyles } from "@material-ui/styles"
 //import moment from "moment"
 
@@ -28,6 +28,11 @@ const useStyles = makeStyles((theme) => ({
       margin: "0px 5px",
     },
   },
+  paper: {
+    "& .css-sghohy-MuiButtonBase-root-MuiButton-root": {
+      margin: "10px",
+    },
+  },
 }))
 
 const headCells = [
@@ -41,11 +46,11 @@ const headCells = [
     sortable: true,
     label: "Time",
   },
-  {
-    id: "type",
-    sortable: true,
-    label: "Type",
-  },
+  // {
+  //   id: "type",
+  //   sortable: true,
+  //   label: "Type",
+  // },
   {
     id: "data",
     sortable: false,
@@ -61,18 +66,31 @@ const usersUrl = route(route().current())
 
 const Activities = () => {
 
+  let {
+    query,
+    items: { data: items },
+    items: { total },
+  } = usePage().props as PagePropsType
 
-  const initialItemsQuery = {
-    page: 1,
-    perPage: 25,
-    direction: "asc",
-    sort: "created_at",
-  }
-  const [itemsQuery, setItemsQuery] = useState(initialItemsQuery)
+  // const initialItemsQuery = {
+  //   ...query,
+  //   page: 1,
+  //   perPage: 25,
+  //   direction: "asc",
+  //   sort: "created_at",
+    
+  // }
+  // console.log(initialItemsQuery)
+  const [itemsQuery, setItemsQuery] = useState(query)
 
-  let { page, perPage, direction, sort } = itemsQuery
+  let {page, perPage, direction, sort } = itemsQuery
 
+  const firstUpdate = useRef(true);
   useEffect(() => {
+      if (firstUpdate.current) {
+        firstUpdate.current = false;
+        return;
+      }
       Inertia.get(usersUrl, itemsQuery, {
         replace: true,
         preserveState: true,
@@ -81,10 +99,7 @@ const Activities = () => {
 
   const classes = useStyles()
 
-  let {
-    items: { data: items },
-    items: { total },
-  } = usePage().props as PagePropsType
+ 
 
   console.log(items);
   const handleRequestSort = (
@@ -140,7 +155,16 @@ const Activities = () => {
   return (
     <AdminLayout title="Activities">
       <Box sx={{ width: "100%" }}>
-        <Paper sx={{ width: "100%", mb: 2 }}>
+        <Paper  className={classes.paper} sx={{ width: "100%", mb: 2 }}>
+          {itemsQuery.tguser_id &&
+          <Button
+             
+              variant="contained"
+              href={route("activities")}
+            >
+              Reset user filter
+          </Button>}
+         
           <TableContainer>
             <Table
               sx={{ minWidth: 750 }}
@@ -159,14 +183,19 @@ const Activities = () => {
               />
               <TableBody>
                 {items.slice().map((row: ActivityType, index: number) => {
-                   let couponUrl = row.coupon ? JSON.parse(row.coupon.data).oldGotolink : null 
+                   let coupon = row.coupon ? JSON.parse(row.coupon.data) : null;
+                   let couponUrl , couponName;
+                   if(coupon) {
+                     couponUrl = coupon.oldGotolink
+                     couponName = coupon.name
+                   }
                   return (
                   
                     <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
                      
                       <TableCell> {row.user.username}</TableCell>
                       <TableCell align="left">{row.created_at}</TableCell>
-                      <TableCell> { row.type && <span>{types[row.type]} </span>}</TableCell>
+                      {/* <TableCell> { row.type && <span>{types[row.type]} </span>}</TableCell> */}
 
                       {row.type == 'inner' && (
                         <TableCell> 
@@ -181,7 +210,8 @@ const Activities = () => {
                       )}
                       {row.type == 'url' && couponUrl && (
                         <TableCell> 
-                           <a href={couponUrl} target="_blank">{couponUrl} </a>
+                          <div>{couponName}</div>
+                          <span>Переход по ссылке: </span><a href={couponUrl} target="_blank">{couponUrl} </a>
                         </TableCell>
                       )}
                       
