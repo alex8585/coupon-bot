@@ -45,6 +45,7 @@ class saveActivities extends Command
         'category_id',
         'is_id',
         'page',
+        'referrer',
     ];
 
 

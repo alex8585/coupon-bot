@@ -21,7 +21,7 @@ class telegramBot extends Command
         $this->updatesHandler = new UpdatesHandler();
         //$this->userSession = new UserSession();
     }
-
+    //test04_2021Bot
 
     public function handle()
     {

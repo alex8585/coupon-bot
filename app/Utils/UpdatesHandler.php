@@ -4,9 +4,10 @@ namespace App\Utils;
 
 use App\Utils\Bot;
 use Telegram\Bot\Actions;
+use App\Utils\UserSession;
+use Illuminate\Support\Str;
 use App\Utils\BotMessageHandler;
 use Telegram\Bot\Laravel\Facades\Telegram;
-use App\Utils\UserSession;
 
 
 
@@ -29,9 +30,24 @@ class UpdatesHandler
         Telegram::sendChatAction(['action' => Actions::TYPING, 'chat_id' => $chatid]);
         $this->msgHandler = new BotMessageHandler();
 
+
         if (!$msgText) {
             $this->msgHandler->mainMenu($chatid);
             return;
+        }
+
+        if (Str::startsWith($msgText, '/start')) {
+            $referrer = Str::replace('/start', '', $msgText);
+            $msgText = '/start';
+            $referrer = (string)Str::of($referrer)->trim();
+            dump($referrer);
+            if ($referrer) {
+                $user = $this->userSession->getDbUserByTgUser($msg['from']);
+                $activity['tguser_id'] = $user['id'];
+                $activity['type'] = 'referrer';
+                $activity['referrer'] = $referrer;
+                $this->userSession->saveActivity($activity);
+            }
         }
 
         switch ($msgText) {
@@ -42,7 +58,7 @@ class UpdatesHandler
                 $this->bot->sendMsg($chatid, 'Я не знаю такую команду');
         }
     }
-
+    //test04_2021Bot
     public function callbackQuery($msg)
     {
         $chatid = $msg['message']['chat']['id'];
@@ -58,8 +74,9 @@ class UpdatesHandler
         }
 
         $action = isset($params['action']) ? $params['action'] : null;
-        dump($data);
-        dump($params);
+
+        // dump($data);
+        //dump($params);
         $activity = $params;
         $activity['tguser_id'] = $user['id'];
         $activity['type'] = 'inner';

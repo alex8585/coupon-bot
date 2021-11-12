@@ -6,7 +6,7 @@ interface TagInterface {
     created_at?: string
 }
 
-type ActivitiesKeysType = | 'inner' | 'url';
+type ActivitiesKeysType = | 'inner' | 'url' | 'referrer';
 interface ActivityType {
     page?: string,
     category?: any,
@@ -19,6 +19,7 @@ interface ActivityType {
     id?: string,
     coupon?: any,
     user?: any,
+    referrer?: string,
 }
 //type ActivityType = 'inner' | 'url' | '';
 

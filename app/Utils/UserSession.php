@@ -57,17 +57,26 @@ class UserSession
         );
 
         $shouldUpdate = false;
-        if ($user->first_name !== $insertData['first_name']) {
-            $shouldUpdate = true;
-            $user->first_name = $insertData['first_name'];
+
+        if (isset($insertData['first_name'])) {
+            if ($user->first_name !== $insertData['first_name']) {
+                $shouldUpdate = true;
+                $user->first_name = $insertData['first_name'];
+            }
         }
-        if ($user->last_name !== $insertData['last_name']) {
-            $shouldUpdate = true;
-            $user->last_name = $insertData['last_name'];
+
+        if (isset($insertData['last_name'])) {
+            if ($user->last_name !== $insertData['last_name']) {
+                $shouldUpdate = true;
+                $user->last_name = $insertData['last_name'];
+            }
         }
-        if ($user->username !== $insertData['username']) {
-            $shouldUpdate = true;
-            $user->username = $insertData['username'];
+
+        if (isset($insertData['username'])) {
+            if ($user->username !== $insertData['username']) {
+                $shouldUpdate = true;
+                $user->username = $insertData['username'];
+            }
         }
 
         if ($shouldUpdate) {

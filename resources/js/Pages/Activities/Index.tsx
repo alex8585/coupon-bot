@@ -149,6 +149,7 @@ const Activities = () => {
   let types:{ [key in ActivitiesKeysType]: string} = {
     'inner':"В боте",
     'url':"Переход по ссылке",
+    'referrer':"Пришел из"
   }
   
 
@@ -212,6 +213,11 @@ const Activities = () => {
                         <TableCell> 
                           <div>{couponName}</div>
                           <span>Переход по ссылке: </span><a href={couponUrl} target="_blank">{couponUrl} </a>
+                        </TableCell>
+                      )}
+                      {row.type == 'referrer' && row.referrer && (
+                        <TableCell> 
+                          <span>Перешел в бота из: </span><span>{row.referrer}</span>
                         </TableCell>
                       )}
                       
