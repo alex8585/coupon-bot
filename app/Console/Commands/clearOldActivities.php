@@ -2,25 +2,24 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Activity;
 use Illuminate\Console\Command;
 
-//use Telegram\Bot\Api;
-
-class createHook extends Command
+class clearOldActivities extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'create_hook';
+    protected $signature = 'clear_old_activities';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create hook command';
+    protected $description = 'Delete  records  from activities table older than 1 month';
 
     /**
      * Create a new command instance.
@@ -39,13 +38,9 @@ class createHook extends Command
      */
     public function handle()
     {
+        $sub1m = now()->subMonths(1);
+        Activity::where([['created_at', '<',  $sub1m]])->delete();
 
-        //$token = '2071529025:AAHjnRSkieqjpxHZnF30lfIpjkPnG-JzdfQ';
-        //$telegram = new Api($token);
-
-
-        //        $response = $telegram->setWebhook(['url' => 'https://176.119.147.16/{$token}/webhook']);
-        //      dd($response);
-        //    return 0;
+        return Command::SUCCESS;
     }
 }

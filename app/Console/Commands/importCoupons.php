@@ -31,7 +31,7 @@ class importCoupons extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Start parser import coupons ';
 
     /**
      * Create a new command instance.

@@ -21,7 +21,7 @@ class saveActivities extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Save user activities from cache to db';
 
     /**
      * Create a new command instance.

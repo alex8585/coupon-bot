@@ -17,7 +17,7 @@
     <!-- Scripts -->
 
     @routes()
-    <?php $jsPath = mix('js/app.js') . '?v=12'; ?>
+    <?php $jsPath = mix('js/app.js') . '?v=3'; ?>
     <script src="{{  $jsPath  }}" defer></script>
 </head>
 
